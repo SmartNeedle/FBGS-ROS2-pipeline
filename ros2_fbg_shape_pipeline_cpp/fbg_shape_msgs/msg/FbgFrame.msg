@@ -1,0 +1,12 @@
+std_msgs/Header header
+uint8 fiber_index
+uint16 error
+uint64 line_number
+float64 source_timestamp
+float32[] curvature
+float32[] angle
+float32[] temperature
+float32[] shape_points
+uint32 shape_stride
+uint32 shape_height
+SpectraCore[] spectra_cores

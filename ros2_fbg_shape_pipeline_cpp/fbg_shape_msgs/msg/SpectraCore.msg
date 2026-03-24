@@ -1,0 +1,9 @@
+uint32 channel
+float64 timestamp
+uint64 sample_number
+uint16 error_status
+uint32[] spectrum_wavelengths
+uint16[] spectrum_powers
+uint32[] peaks_wavelengths
+uint16[] peaks_powers
+uint32 spectrometer_temperature

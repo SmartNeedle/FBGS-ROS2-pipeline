@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>fbg_shape_pipeline_cpp</name>
+  <version>0.1.0</version>
+  <description>Reference ROS 2 C++ pipeline for TCP FBG acquisition and needle shape publishing.</description>
+  <maintainer email="you@example.com">FBG Team</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>fbg_shape_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>rclcpp</depend>
+  <depend>std_msgs</depend>
+
+  <exec_depend>ament_index_python</exec_depend>
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

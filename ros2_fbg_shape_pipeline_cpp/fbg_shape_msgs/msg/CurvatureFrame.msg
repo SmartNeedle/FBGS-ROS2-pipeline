@@ -1,0 +1,10 @@
+std_msgs/Header header
+uint64 line_number
+float64 source_timestamp
+float64[] arc_lengths
+float64[] curvature
+float64[] angle
+float64[] kappa_x
+float64[] kappa_y
+float64[] kappa_z
+float64[] temperature

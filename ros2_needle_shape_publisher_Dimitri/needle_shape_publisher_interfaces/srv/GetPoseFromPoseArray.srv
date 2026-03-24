@@ -1,0 +1,4 @@
+int64 index -1 # the index for which you want the point location along the needle (default tip)
+---
+bool success   # whether the shape was calculated or not
+geometry_msgs/PoseStamped pose

@@ -1,0 +1,30 @@
+tcp_receiver_node:
+  ros__parameters:
+    tcp_host: "127.0.0.1"
+    tcp_port: 50012
+    reconnect_ms: 1000
+    output_topic: "/needle/fbg_frame"
+
+curvature_processor_node:
+  ros__parameters:
+    input_topic: "/needle/fbg_frame"
+    output_topic: "/needle/state/curvatures"
+    first_fbg_index: 1
+    sensor_arc_lengths_m: [0.00, 0.01, 0.02, 0.03]
+    curvature_scale: [1.0, 1.0, 1.0, 1.0]
+    orientation_sign: [1.0, 1.0, 1.0, 1.0]
+    orientation_offset_rad: [0.0, 0.0, 0.0, 0.0]
+    enable_data_averaging: false
+    data_average_window: 1
+    enable_temporal_averaging: false
+    temporal_average_window: 1
+
+shape_publisher_node:
+  ros__parameters:
+    input_topic: "/needle/state/curvatures"
+    output_topic: "/needle/state/current_shape"
+    frame_id: "needle"
+    needle_length_m: 0.2
+    output_spacing_m: 0.001
+    segment_substeps: 4
+    worker_period_ms: 1
