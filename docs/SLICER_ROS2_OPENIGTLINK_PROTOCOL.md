@@ -32,10 +32,11 @@ bash ./scripts/build_cpp_ros2_stack.sh \
   --openigtlink-dir ./OpenIGTLink-build
 ```
 
-Then source the merged install:
+Then source the merged install (and expose OpenIGTLink shared libraries):
 
 ```bash
 source "$HOME/.cache/fbg_colcon/FBGS-ROS2 pipeline_slicer/install/setup.bash"
+export LD_LIBRARY_PATH="/path/to/FBGS-ROS2-pipeline/OpenIGTLink-build/lib:${LD_LIBRARY_PATH}"
 ```
 
 If your cache/install path differs, just use the exact setup path echoed by the build script.
@@ -94,35 +95,90 @@ That test launch publishes a virtual `PoseArray`, converts it to OpenIGTLink, an
 In 3D Slicer:
 
 1. Open `Extension Manager`
-2. Install `OpenIGTLinkIF`
+2. Install `SlicerOpenIGTLink` (this extension provides the `OpenIGTLinkIF` module)
 3. Install `CurveMaker` if it is not already installed
 4. Open `Edit -> Application Settings -> Modules`
 5. Add this additional module path:
-   - `/path/to/FBGS-ROS2-pipeline/SmartNeedleIGTL-3DSlicer`
+   - `/path/to/FBGS-ROS2-pipeline/SmartNeedleIGTL-3DSlicer/SmartNeedle`
 6. Restart Slicer
+
+Path note: point Slicer to the `SmartNeedle` subfolder that contains `SmartNeedle.py`, not only the repository-level `SmartNeedleIGTL-3DSlicer` folder.
 
 Important:
 
 - `SmartNeedleIGTL-3DSlicer` is the lightweight scripted module used for this workflow
-- install `OpenIGTLinkIF` from the Slicer extension catalog instead of building a local source copy
+- install `SlicerOpenIGTLink` from the Slicer extension catalog instead of building a local source copy
+- in recent Slicer versions, searching for `OpenIGTLinkIF` may return no direct hit because it is a module shipped inside the `SlicerOpenIGTLink` extension
+
+If you cannot find the `SmartNeedle` module after restart:
+
+1. Go to `Edit -> Application Settings -> Modules` and confirm the additional module path points to:
+   - `/path/to/FBGS-ROS2-pipeline/SmartNeedleIGTL-3DSlicer/SmartNeedle`
+2. Click `Apply`, then restart Slicer again.
+3. Open `View -> Error Log` and check for Python import errors related to `SmartNeedle`.
+4. Make sure the folder still contains `SmartNeedle.py` and was not moved/renamed.
+5. In the module search box, try both `SmartNeedle` and `Needle`.
 
 ## 6. Connect Slicer
 
-In Slicer:
+In Slicer (beginner-friendly walkthrough):
 
-1. Open the `SmartNeedle` module
-2. Create or select an OpenIGTLink connector node
-3. For a new connector, use:
-   - `Hostname`: `127.0.0.1`
-   - `Port`: `18944`
-4. Click `Start`
+1. Confirm the ROS bridge is already running (Section 4) and listening on port `18944`.
+2. In the module selector (top-left search), open `OpenIGTLinkIF`.
+3. In `OpenIGTLinkIF`:
+   - go to the `Connectors` area
+   - click `+` (Add connector) if no connector exists yet
+   - set `Type` to `Client`
+   - set `Hostname` to `127.0.0.1`
+   - set `Port` to `18944`
+   - click `Active` / `Start` for that connector
+4. Watch the connector status:
+   - `OFF` or `WAIT` means not connected yet
+   - `ON` means the socket connection is established
+5. Open the `SmartNeedle` module (use the module search box).
+6. In SmartNeedle, choose the same OpenIGTLink connector node you just started.
+7. Confirm incoming message/device names appear as:
+   - `NeedleShapeHeader`
+   - `NeedleShape`
 
-When connected, SmartNeedle should receive:
+Quick sanity checks if you do not see data:
 
-- `NeedleShapeHeader`
-- `NeedleShape`
+- verify `Hostname` is `127.0.0.1` and `Port` is `18944`
+- ensure only one process is bound to port `18944`
+- restart connector (`Stop` then `Start`) after restarting ROS launch files
+- check ROS logs from `ros2_igtl_bridge` / `smartneedle_interface` for publish activity
 
 ## 7. Debugging/tuning
+
+### If connector status stays `WAIT` in hardware-free mode
+
+Symptom pattern:
+
+- Slicer connector stays `WAIT`
+- ROS launch shows `igtl_node` exit code `127`
+- log includes `error while loading shared libraries: libOpenIGTLink.so.3: cannot open shared object file`
+
+This means the OpenIGTLink shared library is not on your runtime library path.
+
+```bash
+# 1) locate the library directory
+find /path/to/FBGS-ROS2-pipeline/OpenIGTLink-build -name 'libOpenIGTLink.so*'
+
+# 2) add that directory to LD_LIBRARY_PATH (example if it is under .../lib)
+export LD_LIBRARY_PATH="/path/to/FBGS-ROS2-pipeline/OpenIGTLink-build/lib:${LD_LIBRARY_PATH}"
+
+# 3) re-source ROS install and relaunch the hardware-free test
+source "$HOME/.cache/fbg_colcon/FBGS-ROS2 pipeline_slicer/install/setup.bash"
+ros2 launch smartneedle_interface test.launch.py
+```
+
+Optional verification before relaunch:
+
+```bash
+ldd "$HOME/.cache/fbg_colcon/FBGS-ROS2-pipeline_slicer/install/lib/ros2_igtl_bridge/igtl_node" | grep -i OpenIGTLink
+```
+
+You should see `libOpenIGTLink.so.3 => /.../OpenIGTLink-build/lib/libOpenIGTLink.so.3` (or equivalent), not `not found`.
 
 If the geometry is reversed or mirrored, relaunch with one or more of:
 
