@@ -78,8 +78,25 @@ bash ./scripts/launch_slicer_bridge.sh \
 ```bash
 cd /path/to/FBGS-ROS2-pipeline
 bash ./scripts/launch_interrogator_to_slicer_stack.sh \
-  --install-setup "$HOME/.cache/fbg_colcon/FBGS-ROS2 pipeline_slicer/install/setup.bash"
+  --install-setup "$HOME/.cache/fbg_colcon/FBGS-ROS2 pipeline_slicer/install/setup.bash" \
+  --tcp-host 192.168.50.1 \
+  --tcp-port 50012
 ```
+
+Use the interrogator sender IP for `--tcp-host`.
+Do **not** use `127.0.0.1` unless the interrogator TCP sender process is running on the same Linux machine.
+
+If logs show `TCP receiver error: connect: Connection refused`:
+
+1. Verify target endpoint from Linux:
+   ```bash
+   nc -vz 192.168.50.1 50012
+   ```
+2. Confirm the Windows interrogator stream app is running and listening on TCP `50012`.
+3. Confirm Windows firewall allows inbound TCP `50012` on the Ethernet/private profile.
+4. Re-run Option B with the correct `--tcp-host`.
+
+Note: `igtl_node: Waiting for connection.` is expected until Slicer starts the OpenIGTLink connector.
 
 ### Option C: hardware-free test path
 
