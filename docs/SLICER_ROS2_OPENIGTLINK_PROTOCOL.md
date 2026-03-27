@@ -98,8 +98,10 @@ In 3D Slicer:
 3. Install `CurveMaker` if it is not already installed
 4. Open `Edit -> Application Settings -> Modules`
 5. Add this additional module path:
-   - `/path/to/FBGS-ROS2-pipeline/SmartNeedleIGTL-3DSlicer`
+   - `/path/to/FBGS-ROS2-pipeline/SmartNeedleIGTL-3DSlicer/SmartNeedle`
 6. Restart Slicer
+
+Path note: point Slicer to the `SmartNeedle` subfolder that contains `SmartNeedle.py`, not only the repository-level `SmartNeedleIGTL-3DSlicer` folder.
 
 Important:
 
@@ -110,7 +112,7 @@ Important:
 If you cannot find the `SmartNeedle` module after restart:
 
 1. Go to `Edit -> Application Settings -> Modules` and confirm the additional module path points to:
-   - `/path/to/FBGS-ROS2-pipeline/SmartNeedleIGTL-3DSlicer`
+   - `/path/to/FBGS-ROS2-pipeline/SmartNeedleIGTL-3DSlicer/SmartNeedle`
 2. Click `Apply`, then restart Slicer again.
 3. Open `View -> Error Log` and check for Python import errors related to `SmartNeedle`.
 4. Make sure the folder still contains `SmartNeedle.py` and was not moved/renamed.
