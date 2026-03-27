@@ -94,7 +94,7 @@ That test launch publishes a virtual `PoseArray`, converts it to OpenIGTLink, an
 In 3D Slicer:
 
 1. Open `Extension Manager`
-2. Install `OpenIGTLinkIF`
+2. Install `SlicerOpenIGTLink` (this extension provides the `OpenIGTLinkIF` module)
 3. Install `CurveMaker` if it is not already installed
 4. Open `Edit -> Application Settings -> Modules`
 5. Add this additional module path:
@@ -104,7 +104,8 @@ In 3D Slicer:
 Important:
 
 - `SmartNeedleIGTL-3DSlicer` is the lightweight scripted module used for this workflow
-- install `OpenIGTLinkIF` from the Slicer extension catalog instead of building a local source copy
+- install `SlicerOpenIGTLink` from the Slicer extension catalog instead of building a local source copy
+- in recent Slicer versions, searching for `OpenIGTLinkIF` may return no direct hit because it is a module shipped inside the `SlicerOpenIGTLink` extension
 
 ## 6. Connect Slicer
 
