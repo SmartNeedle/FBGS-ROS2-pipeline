@@ -31,8 +31,8 @@ class SmartNeedle(ScriptedLoadableModule):
         # TODO: update with short description of the module and a link to online module documentation
         # _() function marks text as translatable to other languages
         self.parent.helpText = _("""
-This is an example of scripted loadable module bundled in an extension.
-See more information in <a href="https://github.com/organization/projectname#SmartNeedle">module documentation</a>.
+Connects 3D Slicer to the ROS 2 OpenIGTLink bridge and visualizes the
+incoming SmartNeedle centerline in real time.
 """)
         # TODO: replace with organization, grant and thanks
         self.parent.acknowledgementText = _("""
@@ -212,7 +212,15 @@ class SmartNeedleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             with slicer.util.tryWithErrorDisplay(_("Failed to start shape update."), waitCursor=True):
                 connectorNode = self._parameterNode.igtlConnector
                 self.logic.startShapeUpdate(connectorNode)
-                self._needleShapeObserverID = self.logic.needleShapeHeaderNode.AddObserver( vtk.vtkCommand.ModifiedEvent,self.onNeedleShapeChange)
+                text_modified_event = getattr(
+                    slicer.vtkMRMLTextNode,
+                    "TextModifiedEvent",
+                    vtk.vtkCommand.ModifiedEvent,
+                )
+                self._needleShapeObserverID = self.logic.needleShapeHeaderNode.AddObserver(
+                    text_modified_event,
+                    self.onNeedleShapeChange,
+                )
                 self._parameterNode.shapeUpdateActive = True
                 self._checkCanApply()
         else:
@@ -338,10 +346,11 @@ class SmartNeedleLogic(ScriptedLoadableModuleLogic):
         if not connectorNode:
             raise ValueError("OpenIGTLink connector node is invalid")
         self.activeConnectorNode = connectorNode
-        # Adjust connection nodes
-        self.activeConnectorNode.Start() # Activate connection
-        #self.activeConnectorNode.RegisterIncomingMRMLNode(self.needleShapeHeaderNode)
-        #self.activeConnectorNode.RegisterIncomingMRMLNode(self.needleShapePointsNode)
+        self.initializeConnectorDefaults(self.activeConnectorNode)
+        self.activeConnectorNode.Stop()
+        self.activeConnectorNode.RegisterIncomingMRMLNode(self.needleShapeHeaderNode)
+        self.activeConnectorNode.RegisterIncomingMRMLNode(self.needleShapePointsNode)
+        self.activeConnectorNode.Start()
         self.curveMaker.AutomaticUpdate = True
 
     def stopShapeUpdate(self) -> None:

@@ -101,3 +101,4 @@ The default placeholders live in:
 - `fbg_shape_pipeline_cpp/config/pipeline.yaml`
 
 Replace those placeholder values with your experimentally identified calibration data before running the real system.
+

@@ -1,0 +1,13 @@
+cmake_minimum_required(VERSION 3.15)
+ 
+project(googletest-download NONE)
+include(ExternalProject)
+ExternalProject_Add(googletest
+  URL https://github.com/google/googletest/archive/release-1.12.1.zip
+  SOURCE_DIR        "${PROJECT_BINARY_DIR}/googletest"
+  BINARY_DIR        "${PROJECT_BINARY_DIR}/googletest-build"
+  CONFIGURE_COMMAND ""
+  BUILD_COMMAND ""
+  INSTALL_COMMAND   ""
+  TEST_COMMAND      ""
+)

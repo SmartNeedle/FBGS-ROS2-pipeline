@@ -3,7 +3,7 @@ set -euo pipefail
 
 usage() {
   cat <<'USAGE'
-Build the ROS 2 + Slicer integration stack from the CPP folder.
+Build the canonical CPP interrogator-to-Slicer stack from the repository root.
 
 Usage:
   bash ./scripts/build_cpp_ros2_stack.sh --openigtlink-dir <path> [--ros-distro <name>] [--workspace <path>] [--no-clean]
@@ -12,7 +12,7 @@ Options:
   --openigtlink-dir <path>  CMake directory containing OpenIGTLinkConfig.cmake.
   --ros-distro <name>       ROS 2 distro to source from /opt/ros/<name>.
                             If omitted, auto-detects jazzy/humble or uses $ROS_DISTRO.
-  --workspace <path>        Workspace root to build (default: current directory).
+  --workspace <path>        Repository/workspace root to build (default: current directory).
   --no-clean                Keep existing build/install/log folders.
   -h, --help                Show this help text.
 USAGE
@@ -82,6 +82,13 @@ fi
 
 WORKSPACE_DIR="$(cd "$WORKSPACE_DIR" && pwd)"
 OPENIGTL_DIR="$(cd "$OPENIGTL_DIR" && pwd)"
+SMARTNEEDLE_INTERFACE_DIR="$WORKSPACE_DIR/ws_smartneedle/src/smartneedle_interface/smartneedle_interface"
+
+if [[ ! -f "$SMARTNEEDLE_INTERFACE_DIR/package.xml" ]]; then
+  echo "Missing smartneedle_interface package at: $SMARTNEEDLE_INTERFACE_DIR" >&2
+  exit 1
+fi
+
 WORKSPACE_NAME="$(basename "$WORKSPACE_DIR")"
 CACHE_ROOT="${HOME}/.cache/fbg_colcon/${WORKSPACE_NAME}_slicer"
 BUILD_BASE="${CACHE_ROOT}/build"
@@ -101,10 +108,11 @@ set -u
 echo "Using ROS 2 distro: ${ROS_DISTRO}"
 echo "Workspace: ${WORKSPACE_DIR}"
 echo "OpenIGTLink_DIR: ${OPENIGTL_DIR}"
+echo "smartneedle_interface: ${SMARTNEEDLE_INTERFACE_DIR}"
 echo "Install base: ${INSTALL_BASE}"
 
 colcon --log-base "$LOG_BASE" build \
-  --base-paths "$WORKSPACE_DIR/ros2_fbg_shape_pipeline_cpp" "$WORKSPACE_DIR/ros2_igtl_bridge" "$WORKSPACE_DIR/fbg_slicer_bridge" \
+  --base-paths "$WORKSPACE_DIR/ros2_fbg_shape_pipeline_cpp" "$WORKSPACE_DIR/ros2_igtl_bridge" "$SMARTNEEDLE_INTERFACE_DIR" \
   --build-base "$BUILD_BASE" \
   --install-base "$INSTALL_BASE" \
   --merge-install \
@@ -112,3 +120,4 @@ colcon --log-base "$LOG_BASE" build \
 
 echo "Build complete. Source with:"
 echo "  source ${INSTALL_BASE}/setup.bash"
+
