@@ -32,10 +32,11 @@ bash ./scripts/build_cpp_ros2_stack.sh \
   --openigtlink-dir ./OpenIGTLink-build
 ```
 
-Then source the merged install:
+Then source the merged install (and expose OpenIGTLink shared libraries):
 
 ```bash
 source "$HOME/.cache/fbg_colcon/FBGS-ROS2 pipeline_slicer/install/setup.bash"
+export LD_LIBRARY_PATH="/path/to/FBGS-ROS2-pipeline/OpenIGTLink-build/lib:${LD_LIBRARY_PATH}"
 ```
 
 If your cache/install path differs, just use the exact setup path echoed by the build script.
@@ -148,6 +149,36 @@ Quick sanity checks if you do not see data:
 - check ROS logs from `ros2_igtl_bridge` / `smartneedle_interface` for publish activity
 
 ## 7. Debugging/tuning
+
+### If connector status stays `WAIT` in hardware-free mode
+
+Symptom pattern:
+
+- Slicer connector stays `WAIT`
+- ROS launch shows `igtl_node` exit code `127`
+- log includes `error while loading shared libraries: libOpenIGTLink.so.3: cannot open shared object file`
+
+This means the OpenIGTLink shared library is not on your runtime library path.
+
+```bash
+# 1) locate the library directory
+find /path/to/FBGS-ROS2-pipeline/OpenIGTLink-build -name 'libOpenIGTLink.so*'
+
+# 2) add that directory to LD_LIBRARY_PATH (example if it is under .../lib)
+export LD_LIBRARY_PATH="/path/to/FBGS-ROS2-pipeline/OpenIGTLink-build/lib:${LD_LIBRARY_PATH}"
+
+# 3) re-source ROS install and relaunch the hardware-free test
+source "$HOME/.cache/fbg_colcon/FBGS-ROS2 pipeline_slicer/install/setup.bash"
+ros2 launch smartneedle_interface test.launch.py
+```
+
+Optional verification before relaunch:
+
+```bash
+ldd "$HOME/.cache/fbg_colcon/FBGS-ROS2-pipeline_slicer/install/lib/ros2_igtl_bridge/igtl_node" | grep -i OpenIGTLink
+```
+
+You should see `libOpenIGTLink.so.3 => /.../OpenIGTLink-build/lib/libOpenIGTLink.so.3` (or equivalent), not `not found`.
 
 If the geometry is reversed or mirrored, relaunch with one or more of:
 
