@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>SmartNeedle</class>
+ <widget class="qMRMLWidget" name="SmartNeedle">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>420</width>
+    <height>380</height>
+   </rect>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="ctkCollapsibleButton" name="needleShapeCollapsibleButton">
+     <property name="text">
+      <string>SmartNeedle</string>
+     </property>
+     <layout class="QFormLayout" name="formLayout_needleShape">
+      <item row="0" column="0">
+       <widget class="QLabel" name="labelConnector">
+        <property name="text">
+         <string>OpenIGTLink Client:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="qMRMLNodeComboBox" name="igtlConnectorSelector">
+        <property name="toolTip">
+         <string>Select or create the active OpenIGTLink connector node.</string>
+        </property>
+        <property name="nodeTypes">
+         <stringlist notr="true">
+          <string>vtkMRMLIGTLConnectorNode</string>
+         </stringlist>
+        </property>
+        <property name="showChildNodeTypes">
+         <bool>false</bool>
+        </property>
+        <property name="noneEnabled">
+         <bool>false</bool>
+        </property>
+        <property name="addEnabled">
+         <bool>true</bool>
+        </property>
+        <property name="removeEnabled">
+         <bool>true</bool>
+        </property>
+        <property name="baseName">
+         <string>NeedleShapeConnector</string>
+        </property>
+        <property name="SlicerParameterName" stdset="0">
+         <string>igtlConnector</string>
+        </property>
+       </widget>
+      </item>
+
+        
+    <item row="1" column="0" colspan="2">
+    <layout class="QHBoxLayout" name="horizontalLayout_applyButton">
+    <item>
+    <spacer name="horizontalSpacerLeft">
+        <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+        <size>
+        <width>1</width>
+        <height>20</height>
+        </size>
+        </property>
+    </spacer>
+    </item>
+    <item>
+    <widget class="QPushButton" name="applyButton">
+        <property name="enabled">
+        <bool>false</bool>
+        </property>
+        <property name="minimumSize">
+        <size>
+        <width>250</width>
+        <height>25</height>
+        </size>
+        </property>
+        <property name="toolTip">
+        <string>Start receiving shape updates from the selected OpenIGTLink connector.</string>
+        </property>
+        <property name="text">
+        <string>Start</string>
+        </property>
+    </widget>
+    </item>
+    <item>
+    <spacer name="horizontalSpacerRight">
+        <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+        <size>
+        <width>1</width>
+        <height>20</height>
+        </size>
+        </property>
+    </spacer>
+    </item>
+    </layout>
+    </item>      
+
+      <item row="2" column="0">
+       <widget class="QLabel" name="labelTimestamp">
+        <property name="text">
+         <string>Timestamp:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QLineEdit" name="timeStampTextbox">
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
+        <property name="toolTip">
+         <string>Timestamp from last shape measurement.</string>
+        </property>
+        <property name="text">
+         <string>-- : -- : --.----</string>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">background-color: transparent; border: 0px;</string>
+        </property>
+       </widget>
+      </item>
+
+      <item row="3" column="0">
+       <widget class="QLabel" name="labelPackageNumber">
+        <property name="text">
+         <string>Package number:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QLineEdit" name="packageNumberTextbox">
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
+        <property name="toolTip">
+         <string>Package number.</string>
+        </property>
+        <property name="text">
+         <string>---</string>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">background-color: transparent; border: 0px;</string>
+        </property>
+       </widget>
+      </item>
+
+      <item row="4" column="0">
+       <widget class="QLabel" name="labelNumberPoints">
+        <property name="text">
+         <string>Number points:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="1">
+       <widget class="QLineEdit" name="numberPointsTextbox">
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
+        <property name="toolTip">
+         <string>Number of points in needle shape.</string>
+        </property>
+        <property name="text">
+         <string>---</string>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">background-color: transparent; border: 0px;</string>
+        </property>
+       </widget>
+      </item>
+
+      <item row="5" column="0">
+       <widget class="QLabel" name="labelTipCoordinates">
+        <property name="text">
+         <string>Tip coordinates:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="1">
+       <widget class="QLineEdit" name="needleTipTextbox">
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
+        <property name="toolTip">
+         <string>Needle tip current position.</string>
+        </property>
+        <property name="text">
+         <string>(---, ---, ---)</string>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">background-color: transparent; border: 0px;</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+
+   <item>
+    <widget class="ctkCollapsibleButton" name="saveNeedleShapeCollapsibleButton">
+     <property name="text">
+      <string>Save Needle Shape</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_saveShape">
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_saveShape">
+        <item>
+         <widget class="QLabel" name="labelShapeName">
+          <property name="text">
+           <string>Shape name:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="shapeNameTextbox">
+          <property name="toolTip">
+           <string>Name used to save a copy of the current needle shape.</string>
+          </property>
+          <property name="text">
+           <string>Shape1</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="copyButton">
+          <property name="toolTip">
+           <string>Save a copy of the current needle shape.</string>
+          </property>
+          <property name="text">
+           <string>Save copy</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+  </layout>
+ </widget>
+
+ <customwidgets>
+  <customwidget>
+   <class>qMRMLNodeComboBox</class>
+   <extends>QWidget</extends>
+   <header>qMRMLNodeComboBox.h</header>
+  </customwidget>
+  <customwidget>
+   <class>qMRMLWidget</class>
+   <extends>QWidget</extends>
+   <header>qMRMLWidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ctkCollapsibleButton</class>
+   <extends>QWidget</extends>
+   <header>ctkCollapsibleButton.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+
+ <resources/>
+
+ <connections>
+  <connection>
+   <sender>SmartNeedle</sender>
+   <signal>mrmlSceneChanged(vtkMRMLScene*)</signal>
+   <receiver>igtlConnectorSelector</receiver>
+   <slot>setMRMLScene(vtkMRMLScene*)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>122</x>
+     <y>132</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>248</x>
+     <y>61</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>
