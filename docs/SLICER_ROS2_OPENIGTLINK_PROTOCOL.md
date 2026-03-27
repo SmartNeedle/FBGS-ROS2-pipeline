@@ -36,7 +36,7 @@ Then source the merged install (and expose OpenIGTLink shared libraries):
 
 ```bash
 source "$HOME/.cache/fbg_colcon/FBGS-ROS2 pipeline_slicer/install/setup.bash"
-export LD_LIBRARY_PATH="/path/to/FBGS-ROS2-pipeline/OpenIGTLink-build/lib:${LD_LIBRARY_PATH}"
+export LD_LIBRARY_PATH="/path/to/FBGS-ROS2-pipeline/OpenIGTLink-build/bin:/path/to/FBGS-ROS2-pipeline/OpenIGTLink-build/lib:${LD_LIBRARY_PATH}"
 ```
 
 If your cache/install path differs, just use the exact setup path echoed by the build script.
@@ -164,8 +164,8 @@ This means the OpenIGTLink shared library is not on your runtime library path.
 # 1) locate the library directory
 find /path/to/FBGS-ROS2-pipeline/OpenIGTLink-build -name 'libOpenIGTLink.so*'
 
-# 2) add that directory to LD_LIBRARY_PATH (example if it is under .../lib)
-export LD_LIBRARY_PATH="/path/to/FBGS-ROS2-pipeline/OpenIGTLink-build/lib:${LD_LIBRARY_PATH}"
+# 2) add likely build output directories to LD_LIBRARY_PATH (both .../bin and .../lib)
+export LD_LIBRARY_PATH="/path/to/FBGS-ROS2-pipeline/OpenIGTLink-build/bin:/path/to/FBGS-ROS2-pipeline/OpenIGTLink-build/lib:${LD_LIBRARY_PATH}"
 
 # 3) re-source ROS install and relaunch the hardware-free test
 source "$HOME/.cache/fbg_colcon/FBGS-ROS2 pipeline_slicer/install/setup.bash"
@@ -178,7 +178,7 @@ Optional verification before relaunch:
 ldd "$HOME/.cache/fbg_colcon/FBGS-ROS2-pipeline_slicer/install/lib/ros2_igtl_bridge/igtl_node" | grep -i OpenIGTLink
 ```
 
-You should see `libOpenIGTLink.so.3 => /.../OpenIGTLink-build/lib/libOpenIGTLink.so.3` (or equivalent), not `not found`.
+You should see `libOpenIGTLink.so.3 => /.../OpenIGTLink-build/bin/libOpenIGTLink.so.3` or `/.../OpenIGTLink-build/lib/libOpenIGTLink.so.3`, not `not found`.
 
 If the geometry is reversed or mirrored, relaunch with one or more of:
 
