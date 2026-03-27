@@ -107,6 +107,15 @@ Important:
 - install `SlicerOpenIGTLink` from the Slicer extension catalog instead of building a local source copy
 - in recent Slicer versions, searching for `OpenIGTLinkIF` may return no direct hit because it is a module shipped inside the `SlicerOpenIGTLink` extension
 
+If you cannot find the `SmartNeedle` module after restart:
+
+1. Go to `Edit -> Application Settings -> Modules` and confirm the additional module path points to:
+   - `/path/to/FBGS-ROS2-pipeline/SmartNeedleIGTL-3DSlicer`
+2. Click `Apply`, then restart Slicer again.
+3. Open `View -> Error Log` and check for Python import errors related to `SmartNeedle`.
+4. Make sure the folder still contains `SmartNeedle.py` and was not moved/renamed.
+5. In the module search box, try both `SmartNeedle` and `Needle`.
+
 ## 6. Connect Slicer
 
 In Slicer (beginner-friendly walkthrough):
@@ -123,7 +132,7 @@ In Slicer (beginner-friendly walkthrough):
 4. Watch the connector status:
    - `OFF` or `WAIT` means not connected yet
    - `ON` means the socket connection is established
-5. Open the `SmartNeedle` module.
+5. Open the `SmartNeedle` module (use the module search box).
 6. In SmartNeedle, choose the same OpenIGTLink connector node you just started.
 7. Confirm incoming message/device names appear as:
    - `NeedleShapeHeader`
