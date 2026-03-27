@@ -94,7 +94,7 @@ That test launch publishes a virtual `PoseArray`, converts it to OpenIGTLink, an
 In 3D Slicer:
 
 1. Open `Extension Manager`
-2. Install `OpenIGTLinkIF`
+2. Install `SlicerOpenIGTLink` (this extension provides the `OpenIGTLinkIF` module)
 3. Install `CurveMaker` if it is not already installed
 4. Open `Edit -> Application Settings -> Modules`
 5. Add this additional module path:
@@ -104,23 +104,37 @@ In 3D Slicer:
 Important:
 
 - `SmartNeedleIGTL-3DSlicer` is the lightweight scripted module used for this workflow
-- install `OpenIGTLinkIF` from the Slicer extension catalog instead of building a local source copy
+- install `SlicerOpenIGTLink` from the Slicer extension catalog instead of building a local source copy
+- in recent Slicer versions, searching for `OpenIGTLinkIF` may return no direct hit because it is a module shipped inside the `SlicerOpenIGTLink` extension
 
 ## 6. Connect Slicer
 
-In Slicer:
+In Slicer (beginner-friendly walkthrough):
 
-1. Open the `SmartNeedle` module
-2. Create or select an OpenIGTLink connector node
-3. For a new connector, use:
-   - `Hostname`: `127.0.0.1`
-   - `Port`: `18944`
-4. Click `Start`
+1. Confirm the ROS bridge is already running (Section 4) and listening on port `18944`.
+2. In the module selector (top-left search), open `OpenIGTLinkIF`.
+3. In `OpenIGTLinkIF`:
+   - go to the `Connectors` area
+   - click `+` (Add connector) if no connector exists yet
+   - set `Type` to `Client`
+   - set `Hostname` to `127.0.0.1`
+   - set `Port` to `18944`
+   - click `Active` / `Start` for that connector
+4. Watch the connector status:
+   - `OFF` or `WAIT` means not connected yet
+   - `ON` means the socket connection is established
+5. Open the `SmartNeedle` module.
+6. In SmartNeedle, choose the same OpenIGTLink connector node you just started.
+7. Confirm incoming message/device names appear as:
+   - `NeedleShapeHeader`
+   - `NeedleShape`
 
-When connected, SmartNeedle should receive:
+Quick sanity checks if you do not see data:
 
-- `NeedleShapeHeader`
-- `NeedleShape`
+- verify `Hostname` is `127.0.0.1` and `Port` is `18944`
+- ensure only one process is bound to port `18944`
+- restart connector (`Stop` then `Start`) after restarting ROS launch files
+- check ROS logs from `ros2_igtl_bridge` / `smartneedle_interface` for publish activity
 
 ## 7. Debugging/tuning
 
