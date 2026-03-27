@@ -90,6 +90,63 @@ ros2 launch smartneedle_interface test.launch.py
 
 That test launch publishes a virtual `PoseArray`, converts it to OpenIGTLink, and exposes it on port `18944`.
 
+### Optional hardware networking: direct Ethernet (no-router) setup
+
+Use this when Linux and Windows are connected with a direct Ethernet cable and no DHCP router.
+
+Goal:
+
+- create a stable point-to-point network so Linux can reach the Windows TCP stream host on port `50012`
+
+1. Physical setup:
+   - connect one Ethernet cable directly between the Windows interrogator PC and Linux ROS 2 PC
+   - disable Wi-Fi on both machines during initial validation to avoid route ambiguity
+2. Assign static IP addresses (example `/24`):
+   - Windows: `192.168.50.1`
+   - Linux: `192.168.50.2`
+   - netmask: `255.255.255.0`
+   - gateway: leave blank for this isolated link
+3. Configure Windows IPv4 manually:
+   - `Control Panel -> Network and Internet -> Network Connections`
+   - right-click Ethernet adapter -> `Properties`
+   - open `Internet Protocol Version 4 (TCP/IPv4)`
+   - choose `Use the following IP address`
+   - set IP `192.168.50.1`, subnet mask `255.255.255.0`, gateway blank
+4. Configure Linux IPv4 manually (NetworkManager GUI):
+   - open Ethernet interface settings
+   - set IPv4 method to `Manual`
+   - add address `192.168.50.2`, prefix `24`, gateway blank
+
+Linux CLI alternative (temporary; replace `eth0`):
+
+```bash
+sudo ip addr flush dev eth0
+sudo ip addr add 192.168.50.2/24 dev eth0
+sudo ip link set eth0 up
+```
+
+Validate link and stream reachability from Linux:
+
+```bash
+ping -c 4 192.168.50.1
+nc -vz 192.168.50.1 50012
+```
+
+If `nc` fails:
+
+- confirm the Windows stream source is running and bound to the Ethernet IP
+- allow inbound TCP `50012` in Windows Firewall (Private profile)
+- confirm no VPN/firewall policy is overriding routes
+
+Windows Firewall CLI examples (Administrator Command Prompt):
+
+```bash
+netsh advfirewall firewall add rule name="Allow ICMPv4-In" protocol=icmpv4:8,any dir=in action=allow
+netsh advfirewall firewall add rule name="Allow TCP 50012" dir=in action=allow protocol=TCP localport=50012
+```
+
+Then run the full interrogator-to-Slicer stack and point the interrogator TCP host to the Windows direct-link IP (`192.168.50.1`).
+
 ## 5. Install the Slicer-side pieces
 
 In 3D Slicer:
