@@ -29,12 +29,16 @@ def generate_launch_description():
     virtual_needle = Node(
         package="smartneedle_interface",
         executable="virtual_smartneedle",
-        parameters=[{"dataset": LaunchConfiguration("dataset")}],
+        parameters=[{
+            "dataset": LaunchConfiguration("dataset"),
+            "rate_hz": LaunchConfiguration("rate_hz"),
+        }],
     )
 
     return LaunchDescription(
         [
             DeclareLaunchArgument("dataset", default_value="fbg_10"),
+            DeclareLaunchArgument("rate_hz", default_value="100.0"),
             DeclareLaunchArgument("mode", default_value="server"),
             DeclareLaunchArgument("port", default_value="18944"),
             DeclareLaunchArgument("ip", default_value="127.0.0.1"),

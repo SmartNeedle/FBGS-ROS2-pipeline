@@ -16,12 +16,16 @@ class VirtualSmartNeedle(Node):
 
         #Declare node parameters
         self.declare_parameter('dataset', 'fbg_10') #Dataset file name
+        self.declare_parameter('rate_hz', 100.0)
 
         #Published topics
 
         #Topics from sensorized needle node
         self.publisher_shape = self.create_publisher(PoseArray, '/needle/state/current_shape', 10)
-        timer_period = 3.0  # seconds
+        rate_hz = float(self.get_parameter('rate_hz').value)
+        if rate_hz <= 0.0:
+            raise ValueError('rate_hz must be positive')
+        timer_period = 1.0 / rate_hz
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
         #Load data from matlab file
@@ -39,30 +43,23 @@ class VirtualSmartNeedle(Node):
     # Publish current needle shape (PoseArray of 3D points)
     def timer_callback(self):
         
-        # Use Aurora timestamp
         now = self.get_clock().now().to_msg()
-        decimal = np.mod(self.time_stamp[self.i],1)
-        now.nanosec = int(decimal*1e9)
-        now.sec = int(self.time_stamp[self.i]-decimal)
     
         msg = PoseArray()
         msg.header.stamp = now
         msg.header.frame_id = 'needle'
 
         # Populate message with X data from matlab file
-        if (self.i < self.sensor.size):
-            X = self.sensor[self.i]
-            j = 0
-            while (j < X.size/3):
-                pose = Pose()
-                pose.position.x = float(X[0][j])
-                pose.position.y = float(X[1][j])
-                pose.position.z = float(X[2][j])
-                msg.poses.append(pose)
-                j += 1
-            self.i += 1
+        X = self.sensor[self.i]
+        for j in range(X.shape[1]):
+            pose = Pose()
+            # The MAT recording stores coordinates in millimeters; ROS uses meters.
+            pose.position.x = float(X[0][j]) / 1000.0
+            pose.position.y = float(X[1][j]) / 1000.0
+            pose.position.z = float(X[2][j]) / 1000.0
+            msg.poses.append(pose)
+        self.i = (self.i + 1) % self.sensor.size
         self.publisher_shape.publish(msg)
-        self.get_logger().info('%s Publish - Pose Array %i in %s frame' % (now, self.i, msg.header.frame_id))
 
 def main(args=None):
     rclpy.init(args=args)
