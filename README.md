@@ -6,11 +6,12 @@ This working directory has been trimmed to the canonical interrogator-to-Slicer 
 
 Use these components together:
 
-- `OpenIGTLink/`: source tree for building the OpenIGTLink library required by `ros2_igtl_bridge`
+- `external dependencies/OpenIGTLink/`: collaborator dependency used to build OpenIGTLink
 - `ros2_fbg_shape_pipeline_cpp/`: interrogator TCP receiver, curvature processor, and shape publisher
-- `ros2_igtl_bridge/`: ROS 2 <-> OpenIGTLink bridge library/package
-- `ws_smartneedle/src/smartneedle_interface/smartneedle_interface/`: lightweight ROS2-to-Slicer adapter from the collaborator files
-- `SmartNeedleIGTL-3DSlicer/`: lightweight 3D Slicer module to visualize the incoming needle shape
+- `external dependencies/ws_smartneedle/src/ros2_igtl_bridge/`: untouched collaborator bridge package
+- `external dependencies/ws_smartneedle/src/smartneedle_interface/`: untouched collaborator interface package
+- `ros2_smartneedle_adapter/`: local 100 Hz adapter and launch orchestration
+- `external dependencies/SmartNeedleIGTL-3DSlicer/`: untouched collaborator 3D Slicer module
 
 ## Start here
 
@@ -22,4 +23,4 @@ Use these components together:
 
 ## Current workspace shape
 
-Only the folders needed for the canonical path remain in the working directory. The older custom bridge, duplicate Slicer module, legacy Python publisher packages, duplicate workspace packages, and other historical reference folders were removed to keep navigation simple.
+The collaborator repositories are kept under `external dependencies/` and are not modified or committed into this repository. The build scripts use those paths directly. Their repository URLs should be recorded in the dependency setup documentation before distributing the project.

@@ -82,10 +82,23 @@ fi
 
 WORKSPACE_DIR="$(cd "$WORKSPACE_DIR" && pwd)"
 OPENIGTL_DIR="$(cd "$OPENIGTL_DIR" && pwd)"
-SMARTNEEDLE_INTERFACE_DIR="$WORKSPACE_DIR/ws_smartneedle/src/smartneedle_interface/smartneedle_interface"
+EXTERNAL_ROOT="$WORKSPACE_DIR/external dependencies"
+EXTERNAL_BRIDGE_DIR="$EXTERNAL_ROOT/ws_smartneedle/src/ros2_igtl_bridge"
+EXTERNAL_SMARTNEEDLE_DIR="$EXTERNAL_ROOT/ws_smartneedle/src/smartneedle_interface/smartneedle_interface"
+ADAPTER_DIR="$WORKSPACE_DIR/ros2_smartneedle_adapter"
 
-if [[ ! -f "$SMARTNEEDLE_INTERFACE_DIR/package.xml" ]]; then
-  echo "Missing smartneedle_interface package at: $SMARTNEEDLE_INTERFACE_DIR" >&2
+if [[ ! -f "$EXTERNAL_SMARTNEEDLE_DIR/package.xml" ]]; then
+  echo "Missing external smartneedle_interface package at: $EXTERNAL_SMARTNEEDLE_DIR" >&2
+  exit 1
+fi
+
+if [[ ! -f "$EXTERNAL_BRIDGE_DIR/package.xml" ]]; then
+  echo "Missing external ros2_igtl_bridge package at: $EXTERNAL_BRIDGE_DIR" >&2
+  exit 1
+fi
+
+if [[ ! -f "$ADAPTER_DIR/package.xml" ]]; then
+  echo "Missing local adapter package at: $ADAPTER_DIR" >&2
   exit 1
 fi
 
@@ -108,11 +121,13 @@ set -u
 echo "Using ROS 2 distro: ${ROS_DISTRO}"
 echo "Workspace: ${WORKSPACE_DIR}"
 echo "OpenIGTLink_DIR: ${OPENIGTL_DIR}"
-echo "smartneedle_interface: ${SMARTNEEDLE_INTERFACE_DIR}"
+echo "external ros2_igtl_bridge: ${EXTERNAL_BRIDGE_DIR}"
+echo "external smartneedle_interface: ${EXTERNAL_SMARTNEEDLE_DIR}"
+echo "local adapter: ${ADAPTER_DIR}"
 echo "Install base: ${INSTALL_BASE}"
 
 colcon --log-base "$LOG_BASE" build \
-  --base-paths "$WORKSPACE_DIR/ros2_fbg_shape_pipeline_cpp" "$WORKSPACE_DIR/ros2_igtl_bridge" "$SMARTNEEDLE_INTERFACE_DIR" \
+  --base-paths "$WORKSPACE_DIR/ros2_fbg_shape_pipeline_cpp" "$EXTERNAL_BRIDGE_DIR" "$EXTERNAL_SMARTNEEDLE_DIR" "$ADAPTER_DIR" \
   --build-base "$BUILD_BASE" \
   --install-base "$INSTALL_BASE" \
   --merge-install \

@@ -74,9 +74,9 @@ are picked up immediately.
 
 Supported keys in `needle_config.txt`:
 
-- `needle_length_m` (or `needle_length`)
+- `needle_length_m` (or `needle_length`), expressed in millimeters
 - `first_fbg_index` (1-based, FBGs before this index are ignored)
-- `sensor_arc_lengths_m`
+- `sensor_arc_lengths_m`, expressed in millimeters
 - `curvature_scale`
 - `orientation_sign`
 - `orientation_offset_rad`
@@ -94,7 +94,9 @@ The current implementation expects the calibration quantities from the paper:
 
 Unit note:
 
-- incoming interrogator curvature values are treated as `1/mm` and converted to `1/m` inside the curvature processor before calibration scaling.
+- incoming interrogator curvature values remain in `1/mm`;
+- sensor positions, needle length, and reconstructed ROS coordinates remain in millimeters;
+- the OpenIGTLink adapter forwards those millimeter coordinates unchanged.
 
 The default placeholders live in:
 

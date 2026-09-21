@@ -126,7 +126,7 @@ set +u
 source "$INSTALL_SETUP"
 set -u
 
-ros2 launch smartneedle_interface full_pipeline.launch.py \
+ros2 launch ros2_smartneedle_adapter full_pipeline.launch.py \
   tcp_host:="$TCP_HOST" \
   tcp_port:="$TCP_PORT" \
   mode:="$BRIDGE_MODE" \

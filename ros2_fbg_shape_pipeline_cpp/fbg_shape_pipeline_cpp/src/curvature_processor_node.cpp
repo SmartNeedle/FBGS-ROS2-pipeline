@@ -17,8 +17,6 @@ namespace
 {
 
 constexpr double kPi = 3.14159265358979323846;
-constexpr double kPerMillimeterToPerMeter = 1000.0;
-
 double wrap_pi(double angle)
 {
   while (angle > kPi) {
@@ -219,9 +217,8 @@ private:
     std::vector<double> kappa_z(n, 0.0);
 
     for (std::size_t i = 0; i < n; ++i) {
-      // Interrogator curvature is provided in 1/mm. Convert to 1/m first.
-      const double curvature_per_meter = raw_curvature[i] * kPerMillimeterToPerMeter;
-      calibrated_curvature[i] = curvature_scale_[i] * curvature_per_meter;
+      // Keep the interrogator convention: curvature is expressed in 1/mm.
+      calibrated_curvature[i] = curvature_scale_[i] * raw_curvature[i];
       calibrated_angle[i] = wrap_pi(
         static_cast<double>(orientation_sign_[i]) * raw_angle[i] + orientation_offset_rad_[i]);
       kappa_x[i] = calibrated_curvature[i] * std::cos(calibrated_angle[i]);

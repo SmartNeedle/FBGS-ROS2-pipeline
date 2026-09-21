@@ -51,9 +51,9 @@ def _load_needle_config(config_path: str):
 
     out = {}
     key_aliases = {
-        "needle_length_m": ["needlelengthm", "needlelength", "needletotallengthm", "needletotallength", "totallengthm"],
+        "needle_length_m": ["needlelengthm", "needlelengthmm", "needlelength", "needletotallengthm", "needletotallengthmm", "needletotallength", "totallengthm", "totallengthmm"],
         "first_fbg_index": ["firstfbgindex", "firstfbg", "firstincludedfbgindex"],
-        "sensor_arc_lengths_m": ["sensorarclengthsm", "sensorarclengths", "arclengths"],
+        "sensor_arc_lengths_m": ["sensorarclengthsm", "sensorarclengthsmm", "sensorarclengths", "arclengths"],
         "curvature_scale": ["curvaturescale", "curvaturescales"],
         "orientation_sign": ["orientationsign", "orientationsigns"],
         "orientation_offset_rad": ["orientationoffsetrad", "orientationoffset"],

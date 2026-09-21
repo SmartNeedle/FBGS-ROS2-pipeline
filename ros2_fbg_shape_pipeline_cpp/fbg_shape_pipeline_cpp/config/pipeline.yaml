@@ -24,5 +24,5 @@ shape_publisher_node:
     input_topic: "/needle/state/curvatures"
     output_topic: "/needle/state/current_shape"
     frame_id: "needle"
-    needle_length_m: 0.2
+    needle_length_m: 200.0
     worker_period_ms: 1
