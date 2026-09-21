@@ -138,11 +138,14 @@ std::vector<double> build_measurement_positions(
   double needle_length_m)
 {
   std::vector<double> positions;
-  positions.push_back(0.0);
+  if (arc_lengths.empty()) {
+    return positions;
+  }
+  positions.push_back(arc_lengths.front());
 
-  for (const auto value : arc_lengths) {
-    if (value > positions.back()) {
-      positions.push_back(value);
+  for (std::size_t i = 1; i < arc_lengths.size(); ++i) {
+    if (arc_lengths[i] > positions.back()) {
+      positions.push_back(arc_lengths[i]);
     }
   }
 
@@ -219,7 +222,7 @@ geometry_msgs::msg::PoseArray reconstruct_shape(
     frame.arc_lengths, needle_length_m);
 
   PoseState state;
-  double current_s = 0.0;
+  double current_s = output_positions.front();
 
   for (std::size_t output_index = 0; output_index < output_positions.size(); ++output_index) {
     const double target_s = output_positions[output_index];
