@@ -25,7 +25,7 @@ class ContractTests(unittest.TestCase):
         config = calibration.load_needle_config(CONFIG / "needle_config.txt")
         self.assertEqual(config["first_fbg_index"], 3)
         self.assertEqual(len(config["sensor_arc_lengths_mm"]), 18)
-        self.assertAlmostEqual(config["needle_length_mm"] - config["sensor_arc_lengths_mm"][0], 184.799378094435)
+        self.assertAlmostEqual(config["needle_length_mm"], 196.391633064447)
         self.assertEqual(config["orientation_sign"], [-1.0] * 18)
         self.assertEqual(config["curvature_scale"], [1.0] * 18)
 

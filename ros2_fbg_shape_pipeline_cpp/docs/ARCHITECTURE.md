@@ -40,16 +40,23 @@ Selected measurements: 18 positions from 11.592254970012 through
 Curvature stays in 1/mm. Gains are unity. Angles use calibrated signs/offsets.
 kx = curvature*cos(angle), ky = curvature*sin(angle), kz = 0.
 
-s_vals consists of the selected positions followed by total length.
-g initially equals identity; r[0] = (0,0,0) at the first selected FBG.
-For interval i, g = g * exp(ds * [skew(kappa[i-1]), e3; 0,0]).
-The closed-form SE(3) exponential implements the supplied MATLAB algorithm,
-with a small-angle series to avoid division by zero. There is one output per
-s_vals entry: 19 points for this sensor. No prepended physical-base segment,
-interpolation, 1 mm sampling, or integration substeps are used.
+Each selected curvature represents one constant-curvature longitudinal segment.
+For N measurement positions p, boundaries are b[0]=0,
+b[i]=(p[i-1]+p[i])/2 for i=1..N-1, and b[N]=total length.
+The measurements need not be exact geometric centers of the end segments.
+Assign kappa[i] to [b[i], b[i+1]] and integrate ds=b[i+1]-b[i].
+g initially equals identity; r[0]=(0,0,0) at the physical needle base.
+For each segment, g = g * exp(ds * [skew(kappa[i]), e3; 0,0]).
+This preserves the MATLAB SE(3) update, with explicitly constructed segment
+boundaries replacing measurement positions. The closed-form exponential uses
+a small-angle series to avoid division by zero. Output is N+1 boundary points:
+19 for this sensor, including base and tip. No curvature interpolation,
+1 mm sampling, or integration substeps are used.
 
-The represented arc length is 184.799378094435 mm (total length minus first FBG).
-That is intentional: the coordinate origin is the first FBG, as in MATLAB.
+The first segment is 16.592254970012 mm, the 16 interior segments are 10 mm,
+and the last is 19.799378094435 mm. Their sum is the full calibrated length,
+196.391633064447 mm. A single measurement covers the whole length.
+Using measurements over the unmeasured end portions is a modeling assumption.
 The untouched Slicer CurveMaker module may smooth its visual tube between
 received points; it does not alter the ROS reconstruction or transmitted points.
 

@@ -152,7 +152,7 @@ class PipelineTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             pump(1)
             tip = shapes[-1].poses[-1].position
-            self.assertAlmostEqual(tip.z, 184.799378094435, places=6)
+            self.assertAlmostEqual(tip.z, 196.391633064447, places=6)
             self.assertAlmostEqual(tip.x, 0, places=6)
             self.assertAlmostEqual(tip.y, 0, places=6)
             self.assertIsNone(process.poll(), "Launch stopped during live switching")

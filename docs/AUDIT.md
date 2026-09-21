@@ -64,6 +64,12 @@ calibration accuracy or Slicer GUI rendering.
 
 ## Remaining target validation and external limits
 
+Subsequent user-approved reconstruction update: midpoint boundaries assign
+each measurement to one constant-curvature segment, spanning the physical base
+to the calibrated tip. The 19 output points are now segment boundaries, and
+the represented length is 196.391633064447 mm. Regression references and the
+end-to-end straight-needle expectation have been updated for this model.
+
 - Physical interrogator and Slicer GUI tests require the user's Linux/hardware
   setup. There is no raw vendor capture fixture in the active repository.
 - 100 Hz is a timer target; distinct input frame rate and Slicer rendering rate

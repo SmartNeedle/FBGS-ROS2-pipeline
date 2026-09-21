@@ -118,7 +118,8 @@ python3 ros2_fbg_shape_pipeline_cpp/tools/latency_probe.py
 ```
 
 Expect 19 points starting at zero, a changing bent shape, and rates near 100 Hz
-after warmup. The represented arc length is 184.799378 mm; endpoint distance and
+after warmup. Points are the base and segment ends, not FBG locations.
+The represented arc length is 196.391633 mm; endpoint distance and
 the polyline chord length need not equal arc length. Curvature stays below
 0.004 1/mm. Slicer need not redraw at the ROS publishing rate.
 

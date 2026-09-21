@@ -19,8 +19,9 @@ colcon test --base-paths ros2_fbg_shape_pipeline_cpp \
 colcon test-result --test-result-base "$CACHE/build" --verbose
 ```
 
-These verify straight and bent SE(3) geometry, first-FBG origin, zero-length tip
-intervals, variable-length arrays, and malformed packet lengths. Python tests
+These verify straight and bent SE(3) geometry, physical-base origin, midpoint
+boundaries, nonuniform spacing, a single measurement, a measurement at the tip,
+variable-length arrays, and malformed packet lengths. Python tests
 cover calibration parsing, current sensor selection, simulator packet framing,
 and the curvature bound. ROS-specific tests skip when ROS is unavailable.
 The Linux workflow builds the external library, bridge, processing, and adapter.
@@ -32,6 +33,7 @@ Run for at least 60 seconds after warmup. Do not equate repeated 100 Hz adapter
 output with 100 distinct sensor frames or 100 Slicer renders per second.
 
 For a straight frame expect 19 points, first point zero, and final z about
-184.799378 mm. For the default simulator expect a bending shape with fixed
+196.391633 mm. Points represent segment boundaries, not FBG locations.
+For the default simulator expect a bending shape with fixed
 reconstructed arc length. Real validation additionally requires comparing
 known physical bends against the calibration and coordinate conventions.

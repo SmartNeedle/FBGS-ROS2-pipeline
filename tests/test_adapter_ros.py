@@ -31,7 +31,7 @@ class AdapterTests(unittest.TestCase):
         try:
             shape = PoseArray()
             pose = Pose()
-            pose.position.z = 184.799378
+            pose.position.z = 196.391633
             shape.poses = [pose]
             with patch.object(module.time, "monotonic", return_value=1.0):
                 node.shape_callback(shape)

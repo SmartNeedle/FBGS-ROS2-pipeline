@@ -7,7 +7,7 @@
 
 using namespace fbg_shape_pipeline_cpp;
 
-TEST(Reconstruction, FirstFbgOriginAndStraightTip)
+TEST(Reconstruction, BaseOriginAndFullLengthStraightTip)
 {
   CurvatureFrameData frame;
   frame.arc_lengths = {11.592254970012, 21.592254970012, 181.592254970012};
@@ -15,7 +15,9 @@ TEST(Reconstruction, FirstFbgOriginAndStraightTip)
   const auto shape = reconstruct_shape(frame, 196.391633064447, "needle");
   ASSERT_EQ(shape.poses.size(), 4U);
   EXPECT_DOUBLE_EQ(shape.poses.front().position.z, 0.0);
-  EXPECT_NEAR(shape.poses.back().position.z, 184.799378094435, 1e-10);
+  EXPECT_NEAR(shape.poses[1].position.z, 16.592254970012, 1e-10);
+  EXPECT_NEAR(shape.poses[2].position.z, 101.592254970012, 1e-10);
+  EXPECT_NEAR(shape.poses.back().position.z, 196.391633064447, 1e-10);
 }
 
 TEST(Reconstruction, ConstantBendMatchesAnalyticalSE3)
@@ -27,14 +29,15 @@ TEST(Reconstruction, ConstantBendMatchesAnalyticalSE3)
   const auto shape = reconstruct_shape(frame, 100.0, "needle");
   ASSERT_EQ(shape.poses.size(), 4U);
   for (std::size_t i = 0; i < 4; ++i) {
-    const double s = (i < 3 ? frame.arc_lengths[i] : 100.0) - 10.0;
+    const double boundaries[] = {0.0, 20.0, 50.0, 100.0};
+    const double s = boundaries[i];
     EXPECT_NEAR(shape.poses[i].position.x, 0.0, 1e-10);
     EXPECT_NEAR(shape.poses[i].position.y, -(1.0 - std::cos(0.003*s))/0.003, 1e-9);
     EXPECT_NEAR(shape.poses[i].position.z, std::sin(0.003*s)/0.003, 1e-9);
   }
 }
 
-TEST(Reconstruction, NoInterpolationAndZeroLengthTipInterval)
+TEST(Reconstruction, NoInterpolationAndLastMeasurementAtTip)
 {
   CurvatureFrameData frame;
   frame.arc_lengths = {10.0, 30.0};
@@ -44,7 +47,8 @@ TEST(Reconstruction, NoInterpolationAndZeroLengthTipInterval)
   ASSERT_EQ(shape.poses.size(), 3U);
   EXPECT_DOUBLE_EQ(shape.poses[1].position.y, 0.0);
   EXPECT_DOUBLE_EQ(shape.poses[1].position.z, 20.0);
-  EXPECT_DOUBLE_EQ(shape.poses[2].position.z, 20.0);
+  EXPECT_NEAR(shape.poses[2].position.y, -(1.0 - std::cos(0.04))/0.004, 1e-10);
+  EXPECT_NEAR(shape.poses[2].position.z, 20.0 + std::sin(0.04)/0.004, 1e-10);
   frame.arc_lengths = {30.0, 10.0};
   EXPECT_TRUE(reconstruct_shape(frame, 40.0, "needle").poses.empty());
 }
@@ -66,17 +70,30 @@ TEST(Reconstruction, VaryingBendsMatchIndependentMatrixExponential)
   frame.kappa_z = {0.0,0.0,0.0,0.0};
   const auto shape = reconstruct_shape(frame, 196.391633064447, "needle");
   ASSERT_EQ(shape.poses.size(), 5U);
-  // Independent scipy.linalg.expm oracle using the supplied MATLAB loop.
+  // Independent scipy.linalg.expm oracle with midpoint-bounded intervals.
   const double expected[4][3] = {
-    {0, -0.14998875033749459, 9.9985000674985542},
-    {1.5991468486903073, -1.3485293599048433, 49.937867594461835},
-    {18.302709579411257, 2.2774423072783896, 168.56887737736957},
-    {21.0183397369854, 3.3939408785095679, 183.07295946940013}};
+    {0.0, -0.41286912886361476, 16.585403974323565},
+    {0.6248698025168766, -1.6562561978465626, 41.54403632554556},
+    {7.807272243255075, -2.422724881163089, 121.17444425063125},
+    {11.926403393277996, -5.744019292731825, 195.64665975599456}};
   for (std::size_t i=0; i<4; ++i) {
     EXPECT_NEAR(shape.poses[i+1].position.x, expected[i][0], 1e-9);
     EXPECT_NEAR(shape.poses[i+1].position.y, expected[i][1], 1e-9);
     EXPECT_NEAR(shape.poses[i+1].position.z, expected[i][2], 1e-9);
   }
+}
+
+TEST(Reconstruction, SingleMeasurementCoversWholeNeedle)
+{
+  CurvatureFrameData frame;
+  frame.arc_lengths = {40.0};
+  frame.kappa_x = {0.003};
+  frame.kappa_y = frame.kappa_z = {0.0};
+  const auto shape = reconstruct_shape(frame, 100.0, "needle");
+  ASSERT_EQ(shape.poses.size(), 2U);
+  EXPECT_NEAR(shape.poses.back().position.y, -(1.0 - std::cos(0.3))/0.003, 1e-9);
+  EXPECT_NEAR(shape.poses.back().position.z, std::sin(0.3)/0.003, 1e-9);
+  EXPECT_TRUE(reconstruct_shape(frame, 0.0, "needle").poses.empty());
 }
 
 TEST(Parser, VariableLengthCurvature)

@@ -27,8 +27,8 @@ pull and initialize dependencies on the Linux test machine.
 - Curvature: 1/mm. Angles: radians. Coordinates and lengths: millimeters.
 - Current calibration: 20 incoming values, First FBG 3, 18 selected measurements.
 - Curvature scales must be unity; angle signs and offsets come from calibration.
-- Reconstruction starts at the first selected FBG and uses one SE(3) exponential
-  per measurement interval, including the final interval to the tip.
+- Reconstruction spans the physical base to the calibrated tip, using one SE(3)
+  exponential per constant-curvature segment bounded by measurement midpoints.
 - No curvature interpolation or uniform output resampling.
 - Adapter target: 100 Hz. After 0.5 seconds without a valid shape, publication stops.
 - Real/simulated source switching changes receiver parameters without restarting nodes.

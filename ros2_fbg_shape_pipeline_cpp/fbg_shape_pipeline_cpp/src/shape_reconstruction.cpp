@@ -128,11 +128,15 @@ geometry_msgs::msg::Quaternion quaternion_from_rotation(const Mat3 & r)
   return q;
 }
 
-std::vector<double> build_measurement_positions(
+std::vector<double> build_segment_boundaries(
   const std::vector<double> & arc_lengths,
   double needle_length_mm)
 {
-  std::vector<double> positions = arc_lengths;
+  std::vector<double> positions {0.0};
+  for (std::size_t i = 1; i < arc_lengths.size(); ++i) {
+    positions.push_back(arc_lengths[i - 1] +
+      0.5 * (arc_lengths[i] - arc_lengths[i - 1]));
+  }
   positions.push_back(needle_length_mm);
   return positions;
 }
@@ -198,7 +202,8 @@ geometry_msgs::msg::PoseArray reconstruct_shape(
   {
     return pose_array;
   }
-  if (!std::isfinite(needle_length_mm) || needle_length_mm < frame.arc_lengths.back()) {
+  if (!std::isfinite(needle_length_mm) || needle_length_mm <= 0.0 ||
+    needle_length_mm < frame.arc_lengths.back()) {
     return pose_array;
   }
   for (std::size_t i = 0; i < frame.arc_lengths.size(); ++i) {
@@ -211,7 +216,7 @@ geometry_msgs::msg::PoseArray reconstruct_shape(
     }
   }
 
-  const auto output_positions = build_measurement_positions(
+  const auto output_positions = build_segment_boundaries(
     frame.arc_lengths, needle_length_mm);
 
   PoseState state;
@@ -221,8 +226,8 @@ geometry_msgs::msg::PoseArray reconstruct_shape(
     const double target_s = output_positions[output_index];
     const double segment_length = target_s - current_s;
     if (segment_length > 0.0) {
-      const std::size_t kappa_index = std::min(
-        frame.kappa_x.size() - 1U, output_index - 1U);
+      // Each measurement owns the interval between adjacent midpoint boundaries.
+      const std::size_t kappa_index = output_index - 1U;
       const Vec3 kappa {{
           frame.kappa_x[kappa_index],
           frame.kappa_y[kappa_index],
