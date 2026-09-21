@@ -20,8 +20,10 @@ def make_packet(sample_index: int, active_areas: int) -> bytes:
     temperature = []
     for i in range(active_areas):
         phase = sample_index * 0.05 + i * 0.3
-        curvature_x.append(0.4 * math.sin(phase))
-        curvature_y.append(0.25 * math.cos(phase))
+        # The interrogator curvature units are 1/mm. These amplitudes produce
+        # approximately 4-6 1/m after the receiver's unit conversion.
+        curvature_x.append(0.006 * math.sin(phase))
+        curvature_y.append(0.004 * math.cos(phase))
         temperature.append(22.0 + 0.1 * math.sin(phase))
 
     curvature = []
