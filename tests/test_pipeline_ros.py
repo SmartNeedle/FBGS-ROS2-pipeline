@@ -130,10 +130,16 @@ class PipelineTests(unittest.TestCase):
 
             reader = threading.Thread(target=read_wire, daemon=True)
             reader.start()
+            pump(1.0)
+            first_message = len(wire)
+            measurement_start = time.monotonic()
             pump(2)
-            points = [item for item in wire if item[0] == b"POINT"]
-            print(f"Observed OpenIGTLink POINT throughput: {len(points)/2:.1f} Hz")
-            self.assertGreater(len(points), 80, "Transport failed to sustain even 40 Hz")
+            measurement_duration = time.monotonic() - measurement_start
+            points = [item for item in wire[first_message:] if item[0] == b"POINT"]
+            rate = len(points) / measurement_duration
+            print(f"Steady OpenIGTLink POINT throughput after warmup: {rate:.1f} Hz")
+            self.assertGreaterEqual(rate, 90.0, "Transport is below the 100 Hz target tolerance")
+            self.assertLessEqual(rate, 110.0, "Unexpected duplicate transport output")
             self.assertEqual(points[-1][1], b"NeedleShape")
             self.assertEqual(len(points[-1][2]), 19*136)
             xyz = struct.unpack_from(">fff", points[-1][2], 18*136+100)
