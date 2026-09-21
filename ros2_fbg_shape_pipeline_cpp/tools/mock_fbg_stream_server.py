@@ -100,7 +100,7 @@ def main():
     parser.add_argument("--host", default="0.0.0.0")
     parser.add_argument("--port", type=int, default=50012)
     parser.add_argument("--rate-hz", type=float, default=100.0)
-    parser.add_argument("--active-areas", type=int, default=4)
+    parser.add_argument("--active-areas", type=int, default=20)
     args = parser.parse_args()
 
     period = 1.0 / args.rate_hz
