@@ -124,8 +124,8 @@ colcon --log-base "$LOG_BASE" build \
   --build-base "$BUILD_BASE" \
   --install-base "$INSTALL_BASE" \
   --merge-install \
-  --cmake-args "-DOpenIGTLink_DIR=${OPENIGTL_DIR}"
+  --cmake-args "-DOpenIGTLink_DIR=${OPENIGTL_DIR}" \
+    "-DCMAKE_PROJECT_ros2_igtl_bridge_INCLUDE=${WORKSPACE_DIR}/scripts/cmake/bridge_install_compat.cmake"
 
 echo "Build complete. Source with:"
 echo "  source ${INSTALL_BASE}/setup.bash"
-

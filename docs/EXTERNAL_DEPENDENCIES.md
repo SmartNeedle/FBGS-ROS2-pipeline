@@ -30,6 +30,12 @@ is retained as the original interface reference but is not built or launched:
 our separate ros2_smartneedle_adapter implements that contract with a 100 Hz timer.
 The local fbg_shape_msgs package defines the processing messages.
 
+The pinned bridge's CMakeLists.txt installs a launch directory that is absent
+from its checkout. The build helper injects scripts/cmake/bridge_install_compat.cmake
+at CMake project initialization. It skips only that missing directory install;
+all bridge sources and other install commands remain unchanged. The local
+adapter supplies the launch files used by this pipeline.
+
 Only the external bridge package is selected from ws_smartneedle; the old
 interrogator, reconstruction, robot, virtual dataset, and 1 Hz interface paths
 are not part of the build. Slicer loads SmartNeedleIGTL-3DSlicer/SmartNeedle.

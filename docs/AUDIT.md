@@ -28,6 +28,8 @@ files. They are dependencies, not project-owned cleanup targets.
 - Fixed ignored input-topic launch argument, missing adapter install metadata,
   stale library/config paths, and obsolete documentation.
 - Removed the unneeded external interface from the active build.
+- Linux CI identified a missing upstream bridge launch directory. A local CMake
+  hook skips that nonexistent directory install without editing the dependency.
 - Bounded latency statistics and removed guessed source-clock interpretations.
 
 ## User-confirmed behavior
