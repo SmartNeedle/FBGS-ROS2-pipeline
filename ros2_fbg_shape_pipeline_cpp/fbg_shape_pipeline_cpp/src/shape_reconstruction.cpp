@@ -133,62 +133,24 @@ geometry_msgs::msg::Quaternion quaternion_from_rotation(const Mat3 & r)
   return q;
 }
 
-std::vector<double> build_output_positions(
+std::vector<double> build_measurement_positions(
   const std::vector<double> & arc_lengths,
-  double needle_length_m,
-  double output_spacing_m)
+  double needle_length_m)
 {
   std::vector<double> positions;
   positions.push_back(0.0);
 
-  const double measured_end = arc_lengths.empty() ? 0.0 : arc_lengths.back();
-  const double end_s = std::max(needle_length_m, measured_end);
-  if (output_spacing_m > 0.0) {
-    for (double s = output_spacing_m; s < end_s; s += output_spacing_m) {
-      positions.push_back(s);
-    }
-  } else {
-    for (const auto value : arc_lengths) {
-      if (value > positions.back()) {
-        positions.push_back(value);
-      }
+  for (const auto value : arc_lengths) {
+    if (value > positions.back()) {
+      positions.push_back(value);
     }
   }
 
-  if (end_s > positions.back()) {
-    positions.push_back(end_s);
+  if (needle_length_m > positions.back()) {
+    positions.push_back(needle_length_m);
   }
 
   return positions;
-}
-
-double interpolate_scalar(
-  const std::vector<double> & arc_lengths,
-  const std::vector<double> & values,
-  double s)
-{
-  if (values.empty()) {
-    return 0.0;
-  }
-  if (arc_lengths.empty() || values.size() != arc_lengths.size()) {
-    throw std::runtime_error("Arc length and value vectors must be the same size.");
-  }
-  if (s <= arc_lengths.front()) {
-    return values.front();
-  }
-  if (s >= arc_lengths.back()) {
-    return values.back();
-  }
-
-  for (std::size_t i = 0; i + 1 < arc_lengths.size(); ++i) {
-    if (s >= arc_lengths[i] && s <= arc_lengths[i + 1]) {
-      const double ds = arc_lengths[i + 1] - arc_lengths[i];
-      const double t = ds > 0.0 ? (s - arc_lengths[i]) / ds : 0.0;
-      return (1.0 - t) * values[i] + t * values[i + 1];
-    }
-  }
-
-  return values.back();
 }
 
 PoseState integrate_segment(
@@ -239,8 +201,6 @@ PoseState integrate_segment(
 geometry_msgs::msg::PoseArray reconstruct_shape(
   const CurvatureFrameData & frame,
   double needle_length_m,
-  double output_spacing_m,
-  int segment_substeps,
   const std::string & frame_id)
 {
   geometry_msgs::msg::PoseArray pose_array;
@@ -255,26 +215,24 @@ geometry_msgs::msg::PoseArray reconstruct_shape(
     return pose_array;
   }
 
-  segment_substeps = std::max(1, segment_substeps);
-  const auto output_positions = build_output_positions(
-    frame.arc_lengths, needle_length_m, output_spacing_m);
+  const auto output_positions = build_measurement_positions(
+    frame.arc_lengths, needle_length_m);
 
   PoseState state;
   double current_s = 0.0;
 
-  for (const auto target_s : output_positions) {
+  for (std::size_t output_index = 0; output_index < output_positions.size(); ++output_index) {
+    const double target_s = output_positions[output_index];
     const double segment_length = target_s - current_s;
     if (segment_length > 0.0) {
-      const double ds = segment_length / static_cast<double>(segment_substeps);
-      for (int step = 0; step < segment_substeps; ++step) {
-        const double sample_s = current_s + (step + 0.5) * ds;
-        const Vec3 kappa {{
-            interpolate_scalar(frame.arc_lengths, frame.kappa_x, sample_s),
-            interpolate_scalar(frame.arc_lengths, frame.kappa_y, sample_s),
-            interpolate_scalar(frame.arc_lengths, frame.kappa_z, sample_s),
-          }};
-        state = integrate_segment(state, kappa, ds);
-      }
+      const std::size_t kappa_index = std::min(
+        frame.kappa_x.size() - 1U, output_index - 1U);
+      const Vec3 kappa {{
+          frame.kappa_x[kappa_index],
+          frame.kappa_y[kappa_index],
+          frame.kappa_z[kappa_index],
+        }};
+      state = integrate_segment(state, kappa, segment_length);
     }
 
     geometry_msgs::msg::Pose pose;

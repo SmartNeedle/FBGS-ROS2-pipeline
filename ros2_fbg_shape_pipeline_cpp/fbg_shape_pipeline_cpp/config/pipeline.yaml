@@ -25,6 +25,4 @@ shape_publisher_node:
     output_topic: "/needle/state/current_shape"
     frame_id: "needle"
     needle_length_m: 0.2
-    output_spacing_m: 0.001
-    segment_substeps: 4
     worker_period_ms: 1
