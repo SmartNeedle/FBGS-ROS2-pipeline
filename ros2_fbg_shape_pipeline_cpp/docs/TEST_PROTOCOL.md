@@ -6,7 +6,7 @@ build, simulation, hardware, source switching, and Slicer setup.
 Run portable contract tests from the repository root:
 
 ```bash
-python3 -m unittest discover -s tests -v
+ROS_DOMAIN_ID=99 python3 -m unittest discover -s tests -v
 ```
 
 After building and sourcing the full stack, run the registered C++ tests:

@@ -2,6 +2,7 @@ name: Linux pipeline
 on: [push, pull_request, workflow_dispatch]
 jobs:
   humble:
+    timeout-minutes: 20
     runs-on: ubuntu-22.04
     container: ros:humble-ros-base
     steps:

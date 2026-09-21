@@ -3,6 +3,7 @@ uint8 fiber_index
 uint16 error
 uint64 line_number
 float64 source_timestamp
+# Interrogator values: 1/mm and radians. Variable-length arrays, ordered base to tip.
 float32[] curvature
 float32[] angle
 float32[] temperature

@@ -132,6 +132,7 @@ class PipelineTests(unittest.TestCase):
             reader.start()
             pump(2)
             points = [item for item in wire if item[0] == b"POINT"]
+            print(f"Observed OpenIGTLink POINT throughput: {len(points)/2:.1f} Hz")
             self.assertGreater(len(points), 80, "Transport failed to sustain even 40 Hz")
             self.assertEqual(points[-1][1], b"NeedleShape")
             self.assertEqual(len(points[-1][2]), 19*136)
@@ -164,7 +165,8 @@ class PipelineTests(unittest.TestCase):
                 reader.join(timeout=2)
             if connection:
                 connection.close()
-            os.killpg(process.pid, signal.SIGINT)
+            if process.poll() is None:
+                os.killpg(process.pid, signal.SIGINT)
             try:
                 process.wait(timeout=10)
             except subprocess.TimeoutExpired:

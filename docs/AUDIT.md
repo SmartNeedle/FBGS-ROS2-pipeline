@@ -49,9 +49,18 @@ trimmed, renamed, or edited.
 ## Verification
 
 Portable Python contract tests and shell syntax checks pass locally.
-ROS adapter, C++ parser/SE(3), and TCP switch/shutdown regression tests are
-registered for Linux. GitHub Actions builds ROS Humble and runs these checks.
-The final CI result is recorded in GitHub Actions, not implied by local checks.
+Linux ROS Humble verification passed on commit e46b015:
+https://github.com/jfcoeur/FBGS-ROS2-pipeline/actions/runs/35641815604
+All four ROS packages built. All six Python tests passed, including the
+complete TCP-to-external-OpenIGTLink wire path, live source switching,
+nonzero-error suppression, stale timeout, and recovery. Colcon reported
+9 tests, 0 errors, 0 failures, and 0 skipped, covering parser bounds,
+SE(3) against an independent matrix-exponential oracle, fragmented TCP,
+source switching, and idle shutdown.
+
+The GitHub workflow repeats these checks on future updates. These results
+verify synthetic sources and the actual external transport, not hardware
+calibration accuracy or Slicer GUI rendering.
 
 ## Remaining target validation and external limits
 

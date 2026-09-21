@@ -22,6 +22,8 @@ generated OpenIGTLink-build directory (its CMake cache points to the old source)
 This directory must contain build outputs only. Then build:
 
 ```bash
+# One-time migration cleanup; run from the repository root.
+rm -rf -- ./OpenIGTLink-build
 cmake -S "external dependencies/OpenIGTLink" -B OpenIGTLink-build \
   -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=OFF
 cmake --build OpenIGTLink-build -j"$(nproc)"
@@ -35,6 +37,23 @@ ros2 pkg executables ros2_smartneedle_adapter
 The executable list must include smartneedle_igtl_100hz. The build contains four
 packages: fbg_shape_msgs, fbg_shape_pipeline_cpp, ros2_igtl_bridge, and
 ros2_smartneedle_adapter. The collaborator interface remains a source reference.
+
+Before manual testing, run the automated checks in this sourced terminal.
+The Python integration test launches and stops its own complete stack; do not
+start the manual pipeline yet. Use a separate ROS domain to avoid other nodes:
+
+```bash
+ROS_DOMAIN_ID=99 python3 -m unittest discover -s tests -v
+CACHE="$HOME/.cache/fbg_colcon/$(basename "$PWD")_slicer"
+colcon test --base-paths ros2_fbg_shape_pipeline_cpp \
+  --build-base "$CACHE/build" --install-base "$CACHE/install" --merge-install \
+  --packages-select fbg_shape_pipeline_cpp
+colcon test-result --test-result-base "$CACHE/build" --verbose
+```
+
+Expect no failures and no skipped Python tests on a built Linux workspace.
+The checks include wire-level OpenIGTLink output, live source switching between
+two synthetic TCP servers, error/stale suppression, recovery, and SE(3).
 
 ## 2. Start simulated input
 
@@ -51,6 +70,8 @@ path as FBG_NEEDLE_CONFIG_FILE in the pipeline terminal. Temperature/spectra/
 packet shape are placeholders; only curvature and angle drive reconstruction.
 
 Terminal 2:
+
+Open a fresh terminal and return to ~/Documents/FBGS-ROS2-pipeline before running:
 
 ```bash
 bash scripts/launch_interrogator_to_slicer_stack.sh \
@@ -84,6 +105,9 @@ Coordinates are millimeters, with no extra scale or axis inversion.
 In another sourced terminal:
 
 ```bash
+cd ~/Documents/FBGS-ROS2-pipeline
+source /opt/ros/humble/setup.bash
+source "$HOME/.cache/fbg_colcon/$(basename "$PWD")_slicer/install/setup.bash"
 ros2 topic echo /needle/state/current_shape --once
 ros2 topic hz /needle/fbg_frame
 # Stop each hz command with Ctrl-C before starting the next.
@@ -128,6 +152,15 @@ Use the same port on both sources for a one-command switch. tcp_port can also
 change at runtime. Switching may produce a short gap and an immediate geometry
 change; there is no interpolation between sources. Verify topic timestamps and
 motion after each switch. No automatic fallback to simulation is performed.
+
+Perform at least five real/simulated/real cycles. Keep the same 20-value sensor
+calibration for both sources. Observe the direction and amplitude of a known
+physical bend and compare the simulator's controlled motion. The connector
+should remain ON and the ROS node processes should remain running.
+
+Stop the real sender while selected: verify output pauses, then resumes after
+restarting it. Finally stop the pipeline with Ctrl-C while its selected source
+is idle or disconnected; it should exit without an indefinite receiver wait.
 
 ## 6. Troubleshooting and collaborators
 
