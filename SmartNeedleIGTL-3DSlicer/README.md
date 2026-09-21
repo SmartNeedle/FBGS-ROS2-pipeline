@@ -1,1 +1,0 @@
-# SmartNeedleIGTL-3DSlicer

@@ -5,11 +5,21 @@ This is the recommended end-to-end workflow for this repository.
 ## Canonical path
 
 1. `ros2_fbg_shape_pipeline_cpp` receives interrogator TCP data and publishes `/needle/state/current_shape`
-2. `smartneedle_interface` converts that `PoseArray` into:
+2. `ros2_smartneedle_adapter` converts that `PoseArray` into:
    - `IGTL_POINT_OUT` with device name `NeedleShape`
    - `IGTL_STRING_OUT` with device name `NeedleShapeHeader`
-3. `ros2_igtl_bridge` serves those topics over OpenIGTLink
-4. `SmartNeedleIGTL-3DSlicer` receives the OpenIGTLink stream in 3D Slicer and renders the centerline
+3. The untouched collaborator `ros2_igtl_bridge` serves those topics over OpenIGTLink
+4. The untouched collaborator `SmartNeedleIGTL-3DSlicer` receives the OpenIGTLink stream in 3D Slicer and renders the centerline
+
+## 0. Initialize external dependencies
+
+From the repository root:
+
+```bash
+git submodule update --init --recursive
+```
+
+The submodules are pinned by `.gitmodules`; do not edit their contents in this repository.
 
 ## 1. Build OpenIGTLink
 
@@ -17,7 +27,7 @@ From the repository root on Linux:
 
 ```bash
 cd /path/to/FBGS-ROS2-pipeline
-cmake -S OpenIGTLink -B OpenIGTLink-build -DBUILD_SHARED_LIBS=ON
+cmake -S "external dependencies/OpenIGTLink" -B OpenIGTLink-build -DBUILD_SHARED_LIBS=ON
 cmake --build OpenIGTLink-build -j"$(nproc)"
 ```
 
@@ -44,8 +54,8 @@ If your cache/install path differs, just use the exact setup path echoed by the 
 The canonical build includes:
 
 - `ros2_fbg_shape_pipeline_cpp`
-- `ros2_igtl_bridge`
-- `smartneedle_interface`
+- external collaborator `ros2_igtl_bridge`
+- local `ros2_smartneedle_adapter`
 
 ## 3. Verify the shape topic first
 
@@ -59,9 +69,9 @@ ros2 topic hz /needle/state/current_shape
 
 Assumptions used by the bridge:
 
-- point order is base -> tip unless you enable `reverse_point_order`
-- incoming ROS points are in meters
-- OpenIGTLink/Slicer points are sent in millimeters by default via `point_scale:=1000.0`
+- point order is base -> tip
+- incoming ROS points are in millimeters
+- OpenIGTLink/Slicer points are forwarded in millimeters without an additional scale
 
 ## 4. Start the ROS side
 
@@ -102,10 +112,11 @@ Note: `igtl_node: Waiting for connection.` is expected until Slicer starts the O
 
 ```bash
 source "$HOME/.cache/fbg_colcon/FBGS-ROS2 pipeline_slicer/install/setup.bash"
-ros2 launch smartneedle_interface test.launch.py
+ros2 launch ros2_smartneedle_adapter full_pipeline.launch.py \
+  tcp_host:=127.0.0.1 tcp_port:=50012
 ```
 
-That test launch publishes a virtual `PoseArray`, converts it to OpenIGTLink, and exposes it on port `18944`.
+That launch starts the real TCP receiver and bridge. For a hardware-free simulator, run the simulator separately and publish its frames to the same receiver input contract; the downstream ROS and Slicer path is unchanged.
 
 ### Optional hardware networking: direct Ethernet (no-router) setup
 
@@ -173,7 +184,7 @@ In 3D Slicer:
 3. Install `CurveMaker` if it is not already installed
 4. Open `Edit -> Application Settings -> Modules`
 5. Add this additional module path:
-   - `/path/to/FBGS-ROS2-pipeline/SmartNeedleIGTL-3DSlicer/SmartNeedle`
+   - `/path/to/FBGS-ROS2-pipeline/external dependencies/SmartNeedleIGTL-3DSlicer/SmartNeedle`
 6. Restart Slicer
 
 Path note: point Slicer to the `SmartNeedle` subfolder that contains `SmartNeedle.py`, not only the repository-level `SmartNeedleIGTL-3DSlicer` folder.
@@ -187,7 +198,7 @@ Important:
 If you cannot find the `SmartNeedle` module after restart:
 
 1. Go to `Edit -> Application Settings -> Modules` and confirm the additional module path points to:
-   - `/path/to/FBGS-ROS2-pipeline/SmartNeedleIGTL-3DSlicer/SmartNeedle`
+   - `/path/to/FBGS-ROS2-pipeline/external dependencies/SmartNeedleIGTL-3DSlicer/SmartNeedle`
 2. Click `Apply`, then restart Slicer again.
 3. Open `View -> Error Log` and check for Python import errors related to `SmartNeedle`.
 4. Make sure the folder still contains `SmartNeedle.py` and was not moved/renamed.
@@ -243,7 +254,7 @@ export LD_LIBRARY_PATH="/path/to/FBGS-ROS2-pipeline/OpenIGTLink-build/bin:/path/
 
 # 3) re-source ROS install and relaunch the hardware-free test
 source "$HOME/.cache/fbg_colcon/FBGS-ROS2 pipeline_slicer/install/setup.bash"
-ros2 launch smartneedle_interface test.launch.py
+ros2 launch ros2_smartneedle_adapter slicer_bridge.launch.py
 ```
 
 Optional verification before relaunch:
@@ -254,20 +265,10 @@ ldd "$HOME/.cache/fbg_colcon/FBGS-ROS2-pipeline_slicer/install/lib/ros2_igtl_bri
 
 You should see `libOpenIGTLink.so.3 => /.../OpenIGTLink-build/bin/libOpenIGTLink.so.3` or `/.../OpenIGTLink-build/lib/libOpenIGTLink.so.3`, not `not found`.
 
-If the geometry is reversed or mirrored, relaunch with one or more of:
-
-```bash
-ros2 launch smartneedle_interface bridge.launch.py reverse_point_order:=true
-ros2 launch smartneedle_interface bridge.launch.py invert_x:=true
-ros2 launch smartneedle_interface bridge.launch.py invert_y:=true
-ros2 launch smartneedle_interface bridge.launch.py invert_z:=true
-```
-
-Recommended tuning order:
-
-1. Fix units first with `point_scale`
-2. Fix point order with `reverse_point_order`
-3. Fix axis handedness with `invert_x`, `invert_y`, `invert_z`
+The current millimeter pipeline forwards coordinates without an additional
+scale or axis inversion. Coordinate-frame changes should be made explicitly
+in the reconstruction or adapter contract after confirming them against the
+collaborator Slicer module.
 
 ## 8. Validation checklist
 

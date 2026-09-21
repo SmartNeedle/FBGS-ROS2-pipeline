@@ -13,7 +13,7 @@ namespace fbg_shape_pipeline_cpp
 // SE(3) exponential for each interval.
 geometry_msgs::msg::PoseArray reconstruct_shape(
   const CurvatureFrameData & frame,
-  double needle_length_m,
+  double needle_length_mm,
   const std::string & frame_id);
 
 }  // namespace fbg_shape_pipeline_cpp

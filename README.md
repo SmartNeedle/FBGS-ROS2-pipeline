@@ -21,6 +21,24 @@ Use these components together:
 - Bridge-only launch helper: `scripts/launch_slicer_bridge.sh`
 - Full interrogator-to-Slicer launch helper: `scripts/launch_interrogator_to_slicer_stack.sh`
 
+## External dependencies
+
+The collaborator repositories are pinned as Git submodules. Their contents are not copied into this repository and must not be edited here:
+
+- `external dependencies/ws_smartneedle`
+- `external dependencies/SmartNeedleIGTL-3DSlicer`
+- `external dependencies/OpenIGTLink`
+
+After cloning this repository, initialize them with:
+
+```bash
+git clone --recurse-submodules https://github.com/jfcoeur/FBGS-ROS2-pipeline.git
+cd FBGS-ROS2-pipeline
+git submodule update --init --recursive
+```
+
+The exact URLs are recorded in `.gitmodules`; the exact commits are recorded by the submodule gitlinks in each commit of this repository. To update a dependency intentionally, change its submodule commit and commit the resulting gitlink update.
+
 ## Current workspace shape
 
-The collaborator repositories are kept under `external dependencies/` and are not modified or committed into this repository. The build scripts use those paths directly. Their repository URLs should be recorded in the dependency setup documentation before distributing the project.
+The collaborator repositories are kept under `external dependencies/` and are not modified or vendored into this repository. The build scripts use those paths directly. See `docs/EXTERNAL_DEPENDENCIES.md` for the reproducible setup and update procedure.

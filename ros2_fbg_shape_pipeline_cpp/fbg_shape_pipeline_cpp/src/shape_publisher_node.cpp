@@ -25,7 +25,7 @@ public:
     input_topic_ = declare_parameter<std::string>("input_topic", "/needle/state/curvatures");
     output_topic_ = declare_parameter<std::string>("output_topic", "/needle/state/current_shape");
     frame_id_ = declare_parameter<std::string>("frame_id", "needle");
-    needle_length_m_ = declare_parameter<double>("needle_length_m", 0.2);
+    needle_length_mm_ = declare_parameter<double>("needle_length_mm", 200.0);
     worker_period_ms_ = declare_parameter<int>("worker_period_ms", 1);
 
     // Keep only the newest sample in the DDS queue and in the local queue.
@@ -76,7 +76,7 @@ private:
     frame.temperature = local_msg->temperature;
 
     auto pose_array = reconstruct_shape(
-      frame, needle_length_m_, frame_id_);
+      frame, needle_length_mm_, frame_id_);
     pose_array.header.stamp = local_msg->header.stamp;
     publisher_->publish(pose_array);
   }
@@ -84,7 +84,7 @@ private:
   std::string input_topic_;
   std::string output_topic_;
   std::string frame_id_;
-  double needle_length_m_ {0.2};
+  double needle_length_mm_ {200.0};
   int worker_period_ms_ {1};
 
   std::mutex latest_mutex_;

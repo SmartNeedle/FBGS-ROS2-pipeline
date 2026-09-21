@@ -103,8 +103,8 @@ public:
     input_topic_ = declare_parameter<std::string>("input_topic", "/needle/fbg_frame");
     output_topic_ = declare_parameter<std::string>("output_topic", "/needle/state/curvatures");
 
-    sensor_arc_lengths_m_ = declare_parameter<std::vector<double>>(
-      "sensor_arc_lengths_m", std::vector<double>{0.00, 0.01, 0.02, 0.03});
+    sensor_arc_lengths_mm_ = declare_parameter<std::vector<double>>(
+      "sensor_arc_lengths_mm", std::vector<double>{0.00, 0.01, 0.02, 0.03});
     curvature_scale_ = declare_parameter<std::vector<double>>(
       "curvature_scale", std::vector<double>{1.0, 1.0, 1.0, 1.0});
     orientation_sign_raw_ = declare_parameter<std::vector<double>>(
@@ -140,18 +140,18 @@ public:
 private:
   void normalize_parameters()
   {
-    if (sensor_arc_lengths_m_.empty()) {
-      throw std::runtime_error("sensor_arc_lengths_m must not be empty.");
+    if (sensor_arc_lengths_mm_.empty()) {
+      throw std::runtime_error("sensor_arc_lengths_mm must not be empty.");
     }
 
-    const std::size_t n = sensor_arc_lengths_m_.size();
+    const std::size_t n = sensor_arc_lengths_mm_.size();
     if (
       curvature_scale_.size() != n ||
       orientation_sign_raw_.size() != n ||
       orientation_offset_rad_.size() != n)
     {
       throw std::runtime_error(
-              "Calibration vectors must all have the same length as sensor_arc_lengths_m.");
+              "Calibration vectors must all have the same length as sensor_arc_lengths_mm.");
     }
 
     orientation_sign_.resize(n, 1);
@@ -171,7 +171,7 @@ private:
 
   void handle_frame(const fbg_shape_msgs::msg::FbgFrame::SharedPtr msg)
   {
-    const std::size_t n = sensor_arc_lengths_m_.size();
+    const std::size_t n = sensor_arc_lengths_mm_.size();
     const std::size_t start = first_fbg_index_ - 1U;
     const std::size_t required = start + n;
     if (msg->curvature.size() < required || msg->angle.size() < required) {
@@ -250,7 +250,7 @@ private:
     output.header = msg->header;
     output.line_number = msg->line_number;
     output.source_timestamp = msg->source_timestamp;
-    output.arc_lengths = sensor_arc_lengths_m_;
+    output.arc_lengths = sensor_arc_lengths_mm_;
     output.curvature = calibrated_curvature;
     output.angle = calibrated_angle;
     output.kappa_x = kappa_x;
@@ -263,7 +263,7 @@ private:
   std::string input_topic_;
   std::string output_topic_;
 
-  std::vector<double> sensor_arc_lengths_m_;
+  std::vector<double> sensor_arc_lengths_mm_;
   std::vector<double> curvature_scale_;
   std::vector<double> orientation_sign_raw_;
   std::vector<int> orientation_sign_;

@@ -74,9 +74,9 @@ are picked up immediately.
 
 Supported keys in `needle_config.txt`:
 
-- `needle_length_m` (or `needle_length`), expressed in millimeters
+- `needle_length_mm` (or `needle_length`), expressed in millimeters
 - `first_fbg_index` (1-based, FBGs before this index are ignored)
-- `sensor_arc_lengths_m`, expressed in millimeters
+- `sensor_arc_lengths_mm`, expressed in millimeters
 - `curvature_scale`
 - `orientation_sign`
 - `orientation_offset_rad`
@@ -87,7 +87,7 @@ included sensors (i.e., after ignoring leading FBGs).
 
 The current implementation expects the calibration quantities from the paper:
 
-- `sensor_arc_lengths_m`: sensing locations along the needle
+- `sensor_arc_lengths_mm`: sensing locations along the needle
 - `curvature_scale`: the curvature calibration factor array `C(s)`
 - `orientation_sign`: the selected sign array `S-hat(s)`
 - `orientation_offset_rad`: the selected offset array `b-hat(s)`

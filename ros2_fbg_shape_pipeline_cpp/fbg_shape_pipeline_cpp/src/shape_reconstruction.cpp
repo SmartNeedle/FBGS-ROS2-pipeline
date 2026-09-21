@@ -135,7 +135,7 @@ geometry_msgs::msg::Quaternion quaternion_from_rotation(const Mat3 & r)
 
 std::vector<double> build_measurement_positions(
   const std::vector<double> & arc_lengths,
-  double needle_length_m)
+  double needle_length_mm)
 {
   std::vector<double> positions;
   if (arc_lengths.empty()) {
@@ -149,8 +149,8 @@ std::vector<double> build_measurement_positions(
     }
   }
 
-  if (needle_length_m > positions.back()) {
-    positions.push_back(needle_length_m);
+  if (needle_length_mm > positions.back()) {
+    positions.push_back(needle_length_mm);
   }
 
   return positions;
@@ -203,7 +203,7 @@ PoseState integrate_segment(
 
 geometry_msgs::msg::PoseArray reconstruct_shape(
   const CurvatureFrameData & frame,
-  double needle_length_m,
+  double needle_length_mm,
   const std::string & frame_id)
 {
   geometry_msgs::msg::PoseArray pose_array;
@@ -219,7 +219,7 @@ geometry_msgs::msg::PoseArray reconstruct_shape(
   }
 
   const auto output_positions = build_measurement_positions(
-    frame.arc_lengths, needle_length_m);
+    frame.arc_lengths, needle_length_mm);
 
   PoseState state;
   double current_s = output_positions.front();

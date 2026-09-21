@@ -1,0 +1,9 @@
+[submodule "external dependencies/ws_smartneedle"]
+	path = external dependencies/ws_smartneedle
+	url = https://github.com/SmartNeedle/ws_smartneedle.git
+[submodule "external dependencies/SmartNeedleIGTL-3DSlicer"]
+	path = external dependencies/SmartNeedleIGTL-3DSlicer
+	url = https://github.com/SmartNeedle/SmartNeedleIGTL-3DSlicer.git
+[submodule "external dependencies/OpenIGTLink"]
+	path = external dependencies/OpenIGTLink
+	url = https://github.com/openigtlink/OpenIGTLink.git

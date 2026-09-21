@@ -1,27 +1,26 @@
 # Workspace Map
 
-## Remaining folders
+## Repository folders
 
-- `OpenIGTLink/`
-  Build this library first. Its build directory is passed to colcon as `OpenIGTLink_DIR`.
+- `external dependencies/OpenIGTLink/`
+  Git submodule pinned by `.gitmodules`. Build this library first.
 
 - `ros2_fbg_shape_pipeline_cpp/`
   Canonical interrogator-to-shape ROS 2 stack.
   Topic of interest for Slicer bridging: `/needle/state/current_shape` (`geometry_msgs/msg/PoseArray`).
 
-- `ros2_igtl_bridge/`
-  Canonical OpenIGTLink transport package used by the lightweight interface.
+- `external dependencies/ws_smartneedle/src/ros2_igtl_bridge/`
+  Untouched collaborator OpenIGTLink transport package.
 
-- `ws_smartneedle/src/smartneedle_interface/smartneedle_interface/`
-  Canonical lightweight ROS2-to-Slicer adapter package from the collaborator files.
-  Important launch files:
-  - `bridge.launch.py`: bridge an existing `/needle/state/current_shape` topic to OpenIGTLink
-  - `test.launch.py`: hardware-free virtual needle + OpenIGTLink demo
-  - `full_pipeline.launch.py`: full interrogator-to-Slicer stack using `fbg_shape_pipeline_cpp`
+- `external dependencies/ws_smartneedle/src/smartneedle_interface/`
+  Untouched collaborator package, retained as an external dependency.
 
-- `SmartNeedleIGTL-3DSlicer/`
-  Add this folder to Slicer's additional module paths.
+- `ros2_smartneedle_adapter/`
+  Local 100 Hz adapter and full-pipeline launch orchestration.
+
+- `external dependencies/SmartNeedleIGTL-3DSlicer/`
+  Git submodule. Add its `SmartNeedle` subfolder to Slicer's module paths.
 
 ## Result
 
-The working directory now contains only the canonical pipeline folders above, plus `docs/`, `scripts/`, and repository metadata files.
+The dependency URLs and pinned commits are recorded in `.gitmodules`. Initialize all dependencies with `git submodule update --init --recursive`.

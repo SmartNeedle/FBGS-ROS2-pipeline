@@ -51,9 +51,9 @@ def _load_needle_config(config_path: str):
 
     out = {}
     key_aliases = {
-        "needle_length_m": ["needlelengthm", "needlelengthmm", "needlelength", "needletotallengthm", "needletotallengthmm", "needletotallength", "totallengthm", "totallengthmm"],
+        "needle_length_mm": ["needlelengthmm", "needlelengthm", "needlelength", "needletotallengthmm", "needletotallengthm", "needletotallength", "totallengthmm", "totallengthm"],
         "first_fbg_index": ["firstfbgindex", "firstfbg", "firstincludedfbgindex"],
-        "sensor_arc_lengths_m": ["sensorarclengthsm", "sensorarclengthsmm", "sensorarclengths", "arclengths"],
+        "sensor_arc_lengths_mm": ["sensorarclengthsmm", "sensorarclengthsm", "sensorarclengths", "arclengths"],
         "curvature_scale": ["curvaturescale", "curvaturescales"],
         "orientation_sign": ["orientationsign", "orientationsigns"],
         "orientation_offset_rad": ["orientationoffsetrad", "orientationoffset"],
@@ -63,7 +63,7 @@ def _load_needle_config(config_path: str):
         for alias in aliases:
             if alias in parsed:
                 raw_value = parsed[alias]
-                if canonical_key in ("needle_length_m",):
+                if canonical_key in ("needle_length_mm",):
                     out[canonical_key] = float(_parse_first_numeric(raw_value))
                 elif canonical_key in ("first_fbg_index",):
                     out[canonical_key] = int(_parse_first_numeric(raw_value))
@@ -74,14 +74,14 @@ def _load_needle_config(config_path: str):
     if not out:
         print(
             f"[fbg_shape_pipeline.launch] Found {config_path} but no known keys were parsed. "
-            "Expected keys like needle_length_m, first_fbg_index, sensor_arc_lengths_m, "
+            "Expected keys like needle_length_mm, first_fbg_index, sensor_arc_lengths_mm, "
             "curvature_scale, orientation_sign, orientation_offset_rad."
         )
 
     first_fbg_index = max(1, int(out.get("first_fbg_index", 1)))
     out["first_fbg_index"] = first_fbg_index
 
-    vector_keys = [k for k in ("sensor_arc_lengths_m", "curvature_scale", "orientation_sign", "orientation_offset_rad") if k in out]
+    vector_keys = [k for k in ("sensor_arc_lengths_mm", "curvature_scale", "orientation_sign", "orientation_offset_rad") if k in out]
     if vector_keys:
         lengths = {k: len(out[k]) for k in vector_keys}
         if len(set(lengths.values())) != 1:
@@ -109,11 +109,11 @@ def generate_launch_description():
 
     curvature_overrides = {}
     shape_overrides = {}
-    for key in ("first_fbg_index", "sensor_arc_lengths_m", "curvature_scale", "orientation_sign", "orientation_offset_rad"):
+    for key in ("first_fbg_index", "sensor_arc_lengths_mm", "curvature_scale", "orientation_sign", "orientation_offset_rad"):
         if key in needle_overrides:
             curvature_overrides[key] = needle_overrides[key]
-    if "needle_length_m" in needle_overrides:
-        shape_overrides["needle_length_m"] = needle_overrides["needle_length_m"]
+    if "needle_length_mm" in needle_overrides:
+        shape_overrides["needle_length_mm"] = needle_overrides["needle_length_mm"]
 
     return LaunchDescription([
         DeclareLaunchArgument("tcp_host", default_value="127.0.0.1"),
