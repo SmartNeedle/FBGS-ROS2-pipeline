@@ -1,4 +1,6 @@
 __pycache__/
 *.py[cod]
 OpenIGTLink-build/
-external dependencies snapshot */
+build/
+install/
+log/

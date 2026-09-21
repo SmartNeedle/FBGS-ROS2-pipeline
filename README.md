@@ -1,44 +1,38 @@
-# FBGS-ROS2 Pipeline
+# FBGS ROS 2 Pipeline
 
-This working directory has been trimmed to the canonical interrogator-to-Slicer path.
+Real interrogator data and simulated TCP data use the same receiver, calibration,
+curvature processing, SE(3) reconstruction, and OpenIGTLink output.
 
-## Canonical pipeline
+Start with [the Linux/Slicer protocol](docs/SLICER_ROS2_OPENIGTLINK_PROTOCOL.md).
+See [architecture](ros2_fbg_shape_pipeline_cpp/docs/ARCHITECTURE.md),
+[dependencies](docs/EXTERNAL_DEPENDENCIES.md), [workspace map](docs/WORKSPACE_MAP.md),
+and [audit findings](docs/AUDIT.md).
 
-Use these components together:
-
-- `external dependencies/OpenIGTLink/`: collaborator dependency used to build OpenIGTLink
-- `ros2_fbg_shape_pipeline_cpp/`: interrogator TCP receiver, curvature processor, and shape publisher
-- `external dependencies/ws_smartneedle/src/ros2_igtl_bridge/`: untouched collaborator bridge package
-- `external dependencies/ws_smartneedle/src/smartneedle_interface/`: untouched collaborator interface package
-- `ros2_smartneedle_adapter/`: local 100 Hz adapter and launch orchestration
-- `external dependencies/SmartNeedleIGTL-3DSlicer/`: untouched collaborator 3D Slicer module
-
-## Start here
-
-- Build guide and end-to-end test protocol: `docs/SLICER_ROS2_OPENIGTLINK_PROTOCOL.md`
-- Workspace/layout guide: `docs/WORKSPACE_MAP.md`
-- Build helper: `scripts/build_cpp_ros2_stack.sh`
-- Bridge-only launch helper: `scripts/launch_slicer_bridge.sh`
-- Full interrogator-to-Slicer launch helper: `scripts/launch_interrogator_to_slicer_stack.sh`
-
-## External dependencies
-
-The collaborator repositories are pinned as Git submodules. Their contents are not copied into this repository and must not be edited here:
-
-- `external dependencies/ws_smartneedle`
-- `external dependencies/SmartNeedleIGTL-3DSlicer`
-- `external dependencies/OpenIGTLink`
-
-After cloning this repository, initialize them with:
+## Checkout
 
 ```bash
-git clone --recurse-submodules https://github.com/jfcoeur/FBGS-ROS2-pipeline.git
+git clone https://github.com/jfcoeur/FBGS-ROS2-pipeline.git
 cd FBGS-ROS2-pipeline
-git submodule update --init --recursive
+bash scripts/init_dependencies.sh
 ```
 
-The exact URLs are recorded in `.gitmodules`; the exact commits are recorded by the submodule gitlinks in each commit of this repository. To update a dependency intentionally, change its submodule commit and commit the resulting gitlink update.
+Do not use recursive submodule initialization: the untouched collaborator
+workspace contains two unused legacy gitlinks without URLs.
+The three top-level dependencies are pinned to commits by this repository.
+GitHub main is the source of truth; commit and push development changes, then
+pull and initialize dependencies on the Linux test machine.
 
-## Current workspace shape
+## Contract
 
-The collaborator repositories are kept under `external dependencies/` and are not modified or vendored into this repository. The build scripts use those paths directly. See `docs/EXTERNAL_DEPENDENCIES.md` for the reproducible setup and update procedure.
+- Curvature: 1/mm. Angles: radians. Coordinates and lengths: millimeters.
+- Current calibration: 20 incoming values, First FBG 3, 18 selected measurements.
+- Curvature scales must be unity; angle signs and offsets come from calibration.
+- Reconstruction starts at the first selected FBG and uses one SE(3) exponential
+  per measurement interval, including the final interval to the tip.
+- No curvature interpolation or uniform output resampling.
+- Adapter target: 100 Hz. After 0.5 seconds without a valid shape, publication stops.
+- Real/simulated source switching changes receiver parameters without restarting nodes.
+
+The millimeter PoseArray convention is deliberate and differs from standard ROS
+SI position units. Robot consumers must explicitly convert millimeters to meters
+where needed. Slicer rendering rate is separate from ROS publication rate.

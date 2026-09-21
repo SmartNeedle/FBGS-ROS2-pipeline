@@ -1,197 +1,79 @@
 # Architecture
 
-## 1. Design goals
-
-The system should:
-
-- connect from Linux to the existing TCP stream exposed by the Windows machine,
-- minimize end-to-end latency,
-- keep acquisition, processing, and ROS 2 publication logically separate,
-- allow each stage to be tested independently,
-- preserve timestamps so latency can be measured, and
-- make it easy to replace the reference processing/model with your final calibrated algorithm.
-
-## 2. Recommended deployment
-
-### Windows machine
-
-- Runs the interrogator software.
-- Exposes the existing TCP stream at approximately 100 Hz.
-- Does not need to run ROS 2.
-
-### Linux ROS 2 machine
-
-Runs a single ROS 2 launch file containing three C++ nodes:
-
-1. `tcp_receiver_node`
-2. `curvature_processor_node`
-3. `shape_publisher_node`
-
-These nodes should ideally run:
-
-- in one process using ROS 2 components later, or
-- in one launch file with intra-process communication enabled.
-
-For the first implementation, separate executables are easier to understand and debug. Once stable, you can convert them into composable nodes for lower copy overhead.
-
-## 3. Data flow
+## One processing path
 
 ```text
-Windows interrogator
-    -> TCP binary stream
-Linux tcp_receiver_node
-    -> /needle/fbg_frame
-Linux curvature_processor_node
-    -> /needle/state/curvatures
-Linux shape_publisher_node
-    -> /needle/state/current_shape
+Real interrogator TCP server OR local simulated TCP server
+  -> tcp_receiver_node -> /needle/fbg_frame (FbgFrame)
+  -> curvature_processor_node -> /needle/state/curvatures (CurvatureFrame)
+  -> shape_publisher_node -> /needle/state/current_shape (PoseArray, mm)
+  -> local ros2_smartneedle_adapter
+  -> IGTL_POINT_OUT + IGTL_STRING_OUT
+  -> untouched external ros2_igtl_bridge
+  -> Slicer OpenIGTLinkIF + untouched SmartNeedle module
 ```
 
-### Why this split?
+The simulator replaces only the incoming TCP data. The packet's optional shape
+and spectra fields are placeholders, preserved for inspection but never used
+to reconstruct the displayed shape.
 
-This follows the same high-level pattern as Dimitri's package:
+## Packet contract
 
-- one stage for acquisition and sensor-side handling,
-- one stage for processed curvature/state,
-- one stage for final shape publication.
+The stream uses a little-endian uint32 payload length followed by a uint8 fiber
+index. Each field has an int32 length (including its uint16 ID, excluding the
+length itself) and a payload. Fields 0..7 are error uint16, line uint64, source
+timestamp double, curvature float array, angle float array, shape matrix,
+temperature float array, and spectra blocks. Arrays include a uint32 count.
+Shape includes uint32 width and height. Spectra blocks include their own length,
+channel, and nested typed fields. The receiver validates framing and lengths.
+Packet size is bounded at 64 MiB. The supported Linux targets are little-endian.
 
-That separation makes the system much easier to test, explain, and replace in parts.
+The available implementation defines the packet layout; no separate vendor
+protocol or captured hardware fixture is present in the active repository.
+Simulator/parser agreement alone cannot prove compatibility with every vendor version.
 
-## 4. Low-latency design choices
+## Calibration and reconstruction
 
-### TCP connection from Linux directly to Windows
+Current total length: 196.391633064447 mm.
+Selected measurements: 18 positions from 11.592254970012 through
+181.592254970012 mm, spaced by 10 mm; First FBG = 3 selects values 3..20.
+Curvature stays in 1/mm. Gains are unity. Angles use calibrated signs/offsets.
+kx = curvature*cos(angle), ky = curvature*sin(angle), kz = 0.
 
-This avoids an unnecessary relay process. The Linux ROS 2 machine reads the interrogator stream directly.
+s_vals consists of the selected positions followed by total length.
+g initially equals identity; r[0] = (0,0,0) at the first selected FBG.
+For interval i, g = g * exp(ds * [skew(kappa[i-1]), e3; 0,0]).
+The closed-form SE(3) exponential implements the supplied MATLAB algorithm,
+with a small-angle series to avoid division by zero. There is one output per
+s_vals entry: 19 points for this sensor. No prepended physical-base segment,
+interpolation, 1 mm sampling, or integration substeps are used.
 
-### Dedicated blocking read thread
+The represented arc length is 184.799378094435 mm (total length minus first FBG).
+That is intentional: the coordinate origin is the first FBG, as in MATLAB.
+The untouched Slicer CurveMaker module may smooth its visual tube between
+received points; it does not alter the ROS reconstruction or transmitted points.
 
-The receiver node uses a dedicated socket thread with exact-length reads:
+## Timing and failures
 
-- read 4 bytes for packet length,
-- read the full payload,
-- parse immediately,
-- publish immediately.
+Internal ROS queues have depth one; the shape node stores only the newest
+unprocessed frame and checks it on a 1 ms timer. Overload can drop old samples.
+The simulator uses monotonic deadlines targeting 100 Hz. Curvature magnitude
+is 0.002..0.003 1/mm (2..3 1/m); temperature is a Celsius placeholder and angle
+is radians. Target publishing rates are not hard real-time guarantees.
 
-A dedicated blocking thread is simple and reliable. It also matches the packet logic in your current Windows client.
+The adapter samples the latest shape at 100 Hz. Repeated outputs preserve the
+same input sequence number and receipt timestamp. At 0.5 s without a valid
+shape it stops output and logs once, then logs recovery. Slicer may retain its
+last displayed geometry; no automatic hiding is implemented in external code.
+Nonzero interrogator error fields suppress reconstruction.
 
-### Minimal processing in the acquisition node
+The receiver uses interruptible asynchronous I/O in a dedicated thread.
+Changing tcp_host or tcp_port reconnects to the selected source while all ROS
+nodes stay alive. Existing downstream samples may finish during the switch;
+new samples take over without smoothing or blending.
 
-The receiver node should only:
-
-- receive bytes,
-- parse the packet,
-- attach a ROS receive timestamp,
-- publish a parsed message.
-
-Heavy computation should not happen in the socket callback path.
-
-### Small ROS 2 queues
-
-For low latency, use:
-
-- queue depth 1 or 5,
-- best effort for visualization topics when acceptable,
-- reliable only where packet loss is unacceptable.
-
-For the reference implementation:
-
-- internal pipeline topics use small queues,
-- final shape uses a small queue because only the newest shape is useful.
-
-### Avoid large history windows
-
-Dimitri's older architecture collected many signals before updating curvature. That improves robustness but increases latency. For your current requirement, prefer:
-
-- passthrough or very light filtering first,
-- then add larger windows only if accuracy demands it.
-
-## 5. Node responsibilities
-
-## `tcp_receiver_node`
-
-Responsibilities:
-
-- maintain TCP connection,
-- reconnect automatically,
-- parse the existing packet structure,
-- publish `fbg_shape_msgs/msg/FbgFrame`.
-
-Published topic:
-
-- `/needle/fbg_frame`
-
-Message includes:
-
-- ROS receipt time,
-- interrogator source timestamp,
-- line number,
-- fiber index,
-- curvature,
-- angle,
-- temperature,
-- optional shape vector if the packet already contains one.
-
-## `curvature_processor_node`
-
-Responsibilities:
-
-- subscribe to `/needle/fbg_frame`,
-- optionally smooth or calibrate curvature values,
-- republish a clean curvature message.
-
-Published topic:
-
-- `/needle/state/curvatures`
-
-This node is the right place for:
-
-- gain/offset correction,
-- temperature compensation,
-- active-area weighting,
-- outlier rejection,
-- future calibration model insertion.
-
-## `shape_publisher_node`
-
-Responsibilities:
-
-- subscribe to `/needle/state/curvatures`,
-- reconstruct the 3D needle shape,
-- publish `geometry_msgs/msg/PoseArray`.
-
-Published topic:
-
-- `/needle/state/current_shape`
-
-In the reference package, this uses a simple constant-curvature baseline. In your final system, this is where you should insert the validated needle model.
-
-## 6. Why define custom ROS 2 messages?
-
-Using only `Float64MultiArray` is tempting, but it has three drawbacks:
-
-1. no header timestamp,
-2. poor self-documentation,
-3. harder latency measurement.
-
-Custom messages make the pipeline much easier to debug and explain.
-
-## 7. Future optimization path
-
-Once the pipeline works end to end:
-
-1. Convert the three nodes into components.
-2. Use an intra-process container.
-3. Pre-allocate vectors where practical.
-4. Replace the baseline shape model with the calibrated algorithm.
-5. If needed, fuse processing and shape publication into one node after benchmarking.
-
-## 8. Practical recommendation
-
-Start with the exact three-node architecture in this folder. It is the best balance of:
-
-- low latency,
-- clarity,
-- debuggability,
-- and ease of explanation.
-
-After it is validated, optimize only the stages that actually dominate latency.
+Header strings retain the collaborator format:
+YYYY-MM-DD HH:MM:SS.mmm;input_sequence;point_count;needle.
+Source timestamps are retained in FbgFrame/CurvatureFrame; PoseArray uses ROS
+receipt time. POINT and STRING are separate ROS messages and are not atomic.
+Slicer frame rate and synchronized UI updates require target-machine testing.

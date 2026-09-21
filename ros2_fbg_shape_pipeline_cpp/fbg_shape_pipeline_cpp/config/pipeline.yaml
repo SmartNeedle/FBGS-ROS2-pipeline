@@ -10,7 +10,7 @@ curvature_processor_node:
     input_topic: "/needle/fbg_frame"
     output_topic: "/needle/state/curvatures"
     first_fbg_index: 1
-    sensor_arc_lengths_mm: [0.00, 0.01, 0.02, 0.03]
+    sensor_arc_lengths_mm: [0.0, 10.0, 20.0, 30.0]
     curvature_scale: [1.0, 1.0, 1.0, 1.0]
     orientation_sign: [1.0, 1.0, 1.0, 1.0]
     orientation_offset_rad: [0.0, 0.0, 0.0, 0.0]

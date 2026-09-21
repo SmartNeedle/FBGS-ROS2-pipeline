@@ -10,6 +10,7 @@ def generate_launch_description():
         DeclareLaunchArgument("ip", default_value="127.0.0.1"),
         DeclareLaunchArgument("port", default_value="18944"),
         DeclareLaunchArgument("rate_hz", default_value="100.0"),
+        DeclareLaunchArgument("input_topic", default_value="/needle/state/current_shape"),
         Node(
             package="ros2_igtl_bridge",
             executable="igtl_node",
@@ -24,6 +25,7 @@ def generate_launch_description():
             package="ros2_smartneedle_adapter",
             executable="smartneedle_igtl_100hz",
             output="screen",
-            parameters=[{"rate_hz": LaunchConfiguration("rate_hz")}],
+            parameters=[{"rate_hz": LaunchConfiguration("rate_hz"),
+                         "input_topic": LaunchConfiguration("input_topic")}],
         ),
     ])

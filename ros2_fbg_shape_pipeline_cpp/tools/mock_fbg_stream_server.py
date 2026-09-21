@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import argparse
 import math
+from pathlib import Path
+import runpy
 import socket
 import struct
 import time
@@ -11,7 +13,7 @@ def pack_field(field_id: int, payload: bytes) -> bytes:
     return struct.pack("<IH", field_length, field_id) + payload
 
 
-def make_packet(sample_index: int, active_areas: int) -> bytes:
+def make_packet(sample_index: int, active_areas: int, rate_hz: float = 100.0) -> bytes:
     timestamp = time.time()
     fiber_index = 0
 
@@ -19,9 +21,9 @@ def make_packet(sample_index: int, active_areas: int) -> bytes:
     curvature_y = []
     temperature = []
     for i in range(active_areas):
-        phase = sample_index * 0.05 + i * 0.3
+        phase = (sample_index / rate_hz) * 5.0 + i * 0.3
         # The interrogator curvature units are 1/mm. These amplitudes remain
-        # below 4 1/m after converting the resulting shape to physical scale.
+        # 0.002..0.003 1/mm equals 2..3 1/m, below the requested 4 1/m.
         curvature_x.append(0.003 * math.sin(phase))
         curvature_y.append(0.002 * math.cos(phase))
         temperature.append(22.0 + 0.1 * math.sin(phase))
@@ -99,11 +101,21 @@ def make_packet(sample_index: int, active_areas: int) -> bytes:
 
 def main():
     parser = argparse.ArgumentParser(description="Mock FBG TCP stream server.")
-    parser.add_argument("--host", default="0.0.0.0")
+    parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=50012)
     parser.add_argument("--rate-hz", type=float, default=100.0)
-    parser.add_argument("--active-areas", type=int, default=20)
+    parser.add_argument("--active-areas", type=int, default=None)
+    config_dir = Path(__file__).resolve().parents[1] / "fbg_shape_pipeline_cpp" / "config"
+    parser.add_argument("--needle-config", type=Path, default=config_dir / "needle_config.txt")
     args = parser.parse_args()
+    if not math.isfinite(args.rate_hz) or args.rate_hz <= 0 or not 1 <= args.port <= 65535:
+        parser.error("rate-hz must be positive and finite; port must be 1..65535")
+    calibration = runpy.run_path(str(config_dir / "needle_calibration.py"))["load_needle_config"](args.needle_config)
+    required = calibration["first_fbg_index"] - 1 + len(calibration["sensor_arc_lengths_mm"])
+    if args.active_areas is None:
+        args.active_areas = required
+    if args.active_areas < required:
+        parser.error(f"Selected calibration requires at least {required} values")
 
     period = 1.0 / args.rate_hz
 
@@ -117,14 +129,18 @@ def main():
             client, address = server.accept()
             print(f"Client connected from {address}")
             with client:
+                client.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
                 sample_index = 0
+                deadline = time.monotonic()
                 try:
                     while True:
-                        start = time.time()
-                        client.sendall(make_packet(sample_index, args.active_areas))
+                        client.sendall(make_packet(sample_index, args.active_areas, args.rate_hz))
                         sample_index += 1
-                        elapsed = time.time() - start
-                        time.sleep(max(0.0, period - elapsed))
+                        deadline += period
+                        now = time.monotonic()
+                        if deadline < now - period:
+                            deadline = now
+                        time.sleep(max(0.0, deadline - now))
                 except (ConnectionResetError, BrokenPipeError):
                     print("Client disconnected")
 

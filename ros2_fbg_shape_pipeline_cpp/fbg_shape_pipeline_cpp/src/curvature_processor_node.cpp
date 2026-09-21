@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cmath>
 #include <deque>
 #include <memory>
@@ -19,13 +20,7 @@ namespace
 constexpr double kPi = 3.14159265358979323846;
 double wrap_pi(double angle)
 {
-  while (angle > kPi) {
-    angle -= 2.0 * kPi;
-  }
-  while (angle < -kPi) {
-    angle += 2.0 * kPi;
-  }
-  return angle;
+  return std::remainder(angle, 2.0 * kPi);
 }
 
 std::vector<double> arithmetic_mean(const std::deque<std::vector<double>> & values)
@@ -104,7 +99,7 @@ public:
     output_topic_ = declare_parameter<std::string>("output_topic", "/needle/state/curvatures");
 
     sensor_arc_lengths_mm_ = declare_parameter<std::vector<double>>(
-      "sensor_arc_lengths_mm", std::vector<double>{0.00, 0.01, 0.02, 0.03});
+      "sensor_arc_lengths_mm", std::vector<double>{0.0, 10.0, 20.0, 30.0});
     curvature_scale_ = declare_parameter<std::vector<double>>(
       "curvature_scale", std::vector<double>{1.0, 1.0, 1.0, 1.0});
     orientation_sign_raw_ = declare_parameter<std::vector<double>>(
@@ -156,6 +151,13 @@ private:
 
     orientation_sign_.resize(n, 1);
     for (std::size_t i = 0; i < n; ++i) {
+      if (curvature_scale_[i] != 1.0 || !std::isfinite(orientation_sign_raw_[i]) ||
+        std::abs(orientation_sign_raw_[i]) != 1.0 || !std::isfinite(orientation_offset_rad_[i]) ||
+        !std::isfinite(sensor_arc_lengths_mm_[i]) || sensor_arc_lengths_mm_[i] < 0.0 ||
+        (i > 0 && sensor_arc_lengths_mm_[i] <= sensor_arc_lengths_mm_[i - 1]))
+      {
+        throw std::runtime_error("Invalid calibration: require unity scales, signs +/-1, finite offsets and increasing positions.");
+      }
       orientation_sign_[i] = orientation_sign_raw_[i] >= 0.0 ? 1 : -1;
     }
 
@@ -171,6 +173,11 @@ private:
 
   void handle_frame(const fbg_shape_msgs::msg::FbgFrame::SharedPtr msg)
   {
+    if (msg->error != 0) {
+      RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 2000,
+        "Interrogator error %u: suppressing reconstruction", msg->error);
+      return;
+    }
     const std::size_t n = sensor_arc_lengths_mm_.size();
     const std::size_t start = first_fbg_index_ - 1U;
     const std::size_t required = start + n;
@@ -184,6 +191,12 @@ private:
 
     auto raw_curvature = subvector_to_double(msg->curvature, start, n);
     auto raw_angle = subvector_to_double(msg->angle, start, n);
+    for (std::size_t i = 0; i < n; ++i) {
+      if (!std::isfinite(raw_curvature[i]) || !std::isfinite(raw_angle[i])) {
+        RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 2000, "Dropping nonfinite curvature/angle frame");
+        return;
+      }
+    }
     std::vector<double> raw_temperature;
     if (msg->temperature.size() >= required) {
       raw_temperature = subvector_to_double(msg->temperature, start, n);
@@ -218,7 +231,7 @@ private:
 
     for (std::size_t i = 0; i < n; ++i) {
       // Keep the interrogator convention: curvature is expressed in 1/mm.
-      calibrated_curvature[i] = curvature_scale_[i] * raw_curvature[i];
+      calibrated_curvature[i] = raw_curvature[i];
       calibrated_angle[i] = wrap_pi(
         static_cast<double>(orientation_sign_[i]) * raw_angle[i] + orientation_offset_rad_[i]);
       kappa_x[i] = calibrated_curvature[i] * std::cos(calibrated_angle[i]);

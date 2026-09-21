@@ -28,10 +28,10 @@ std::vector<T> read_vector(
   std::size_t offset,
   std::size_t count)
 {
-  const std::size_t byte_count = sizeof(T) * count;
-  if (offset + byte_count > bytes.size()) {
+  if (offset > bytes.size() || count > (bytes.size() - offset) / sizeof(T)) {
     throw std::runtime_error("Packet ended before expected array field.");
   }
+  const std::size_t byte_count = sizeof(T) * count;
 
   std::vector<T> values(count);
   if (count > 0U) {
@@ -82,6 +82,10 @@ ParseResult parse_frame_payload(const std::vector<std::uint8_t> & payload)
 
       const std::size_t field_payload_length =
         static_cast<std::size_t>(field_length - 2);
+      if (field_payload_length > payload.size() - offset) {
+        throw std::runtime_error("Field exceeds packet boundary.");
+      }
+      const auto field_end = offset + field_payload_length;
 
       switch (field_id) {
         case 0:
@@ -151,6 +155,9 @@ ParseResult parse_frame_payload(const std::vector<std::uint8_t> & payload)
             FbgFrameData::SpectraCoreData core_data;
 
             const auto block_length = read_scalar<std::uint32_t>(payload, offset);
+            if (block_length < 5U || block_length > spectra_field_end - offset) {
+              throw std::runtime_error("Invalid spectra block boundary.");
+            }
             const std::size_t block_end = offset + block_length;
             offset += sizeof(std::uint32_t);
 
@@ -170,6 +177,10 @@ ParseResult parse_frame_payload(const std::vector<std::uint8_t> & payload)
 
               const std::size_t subfield_payload_length =
                 static_cast<std::size_t>(subfield_length - 2);
+              if (offset > block_end || subfield_payload_length > block_end - offset) {
+                throw std::runtime_error("Spectra subfield exceeds block boundary.");
+              }
+              const auto subfield_end = offset + subfield_payload_length;
 
               switch (subfield_id) {
                 case 0:
@@ -237,6 +248,9 @@ ParseResult parse_frame_payload(const std::vector<std::uint8_t> & payload)
                   skip_bytes(payload, offset, subfield_payload_length);
                   break;
               }
+              if (offset != subfield_end) {
+                throw std::runtime_error("Spectra subfield length does not match content.");
+              }
             }
 
             frame.spectra_cores.push_back(std::move(core_data));
@@ -254,6 +268,9 @@ ParseResult parse_frame_payload(const std::vector<std::uint8_t> & payload)
           stream << "Unknown field id: " << field_id;
           throw std::runtime_error(stream.str());
         }
+      }
+      if (offset != field_end) {
+        throw std::runtime_error("Field length does not match content.");
       }
     }
 

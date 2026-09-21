@@ -94,11 +94,6 @@ Vec3 add(const Vec3 & a, const Vec3 & b)
   return {{a[0] + b[0], a[1] + b[1], a[2] + b[2]}};
 }
 
-Vec3 scale(const Vec3 & v, double s)
-{
-  return {{v[0] * s, v[1] * s, v[2] * s}};
-}
-
 geometry_msgs::msg::Quaternion quaternion_from_rotation(const Mat3 & r)
 {
   geometry_msgs::msg::Quaternion q;
@@ -137,22 +132,8 @@ std::vector<double> build_measurement_positions(
   const std::vector<double> & arc_lengths,
   double needle_length_mm)
 {
-  std::vector<double> positions;
-  if (arc_lengths.empty()) {
-    return positions;
-  }
-  positions.push_back(arc_lengths.front());
-
-  for (std::size_t i = 1; i < arc_lengths.size(); ++i) {
-    if (arc_lengths[i] > positions.back()) {
-      positions.push_back(arc_lengths[i]);
-    }
-  }
-
-  if (needle_length_mm > positions.back()) {
-    positions.push_back(needle_length_mm);
-  }
-
+  std::vector<double> positions = arc_lengths;
+  positions.push_back(needle_length_mm);
   return positions;
 }
 
@@ -216,6 +197,18 @@ geometry_msgs::msg::PoseArray reconstruct_shape(
     frame.kappa_z.size() != frame.arc_lengths.size())
   {
     return pose_array;
+  }
+  if (!std::isfinite(needle_length_mm) || needle_length_mm < frame.arc_lengths.back()) {
+    return pose_array;
+  }
+  for (std::size_t i = 0; i < frame.arc_lengths.size(); ++i) {
+    if (!std::isfinite(frame.arc_lengths[i]) || frame.arc_lengths[i] < 0.0 ||
+      (i > 0 && frame.arc_lengths[i] <= frame.arc_lengths[i - 1]) ||
+      !std::isfinite(frame.kappa_x[i]) || !std::isfinite(frame.kappa_y[i]) ||
+      !std::isfinite(frame.kappa_z[i]))
+    {
+      return pose_array;
+    }
   }
 
   const auto output_positions = build_measurement_positions(

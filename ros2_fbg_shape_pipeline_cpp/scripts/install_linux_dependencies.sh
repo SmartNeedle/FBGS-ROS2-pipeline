@@ -85,6 +85,7 @@ sudo apt install -y \
   "ros-${ROS_DISTRO}-launch-ros" \
   "ros-${ROS_DISTRO}-ament-index-python" \
   "ros-${ROS_DISTRO}-rclpy"
+sudo apt install -y "ros-${ROS_DISTRO}-tf2-ros" "ros-${ROS_DISTRO}-ament-cmake-gtest"
 
 if [[ "$SKIP_ROSDEP_INIT" -eq 0 ]]; then
   echo "[2/4] Initializing rosdep (idempotent)..."

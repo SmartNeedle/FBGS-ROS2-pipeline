@@ -83,6 +83,9 @@ if [[ ! -f "$INSTALL_SETUP" ]]; then
 fi
 
 unset AMENT_PREFIX_PATH COLCON_PREFIX_PATH CMAKE_PREFIX_PATH
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+export FBG_NEEDLE_CONFIG_FILE="${FBG_NEEDLE_CONFIG_FILE:-$ROOT/ros2_fbg_shape_pipeline_cpp/fbg_shape_pipeline_cpp/config/needle_config.txt}"
+export LD_LIBRARY_PATH="$ROOT/OpenIGTLink-build/bin:$ROOT/OpenIGTLink-build/lib:${LD_LIBRARY_PATH:-}"
 
 set +u
 source "$INSTALL_SETUP"
@@ -93,5 +96,5 @@ ros2 launch ros2_smartneedle_adapter full_pipeline.launch.py \
   tcp_port:="$TCP_PORT" \
   mode:="$BRIDGE_MODE" \
   bridge_ip:="$BRIDGE_IP" \
-  bridge_port:="$BRIDGE_PORT" \
+  bridge_port:="$BRIDGE_PORT"
 

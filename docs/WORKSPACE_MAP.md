@@ -1,26 +1,18 @@
 # Workspace Map
 
-## Repository folders
+| Path | Purpose |
+| --- | --- |
+| ros2_fbg_shape_pipeline_cpp/fbg_shape_msgs | Local parsed frame and curvature messages |
+| ros2_fbg_shape_pipeline_cpp/fbg_shape_pipeline_cpp | Receiver, processor, reconstruction, calibration, C++ tests |
+| ros2_fbg_shape_pipeline_cpp/tools | TCP simulator and latency probe |
+| ros2_fbg_shape_pipeline_cpp/scripts | Optional core-only build/launch and Linux dependency installation |
+| ros2_smartneedle_adapter | Local 100 Hz adapter and complete stack launch |
+| external dependencies | Three pinned, untouched upstream repositories |
+| scripts | Full-stack build/launch and dependency initialization |
+| tests | Portable contract tests and ROS integration checks |
+| docs | Canonical setup, audit, and dependency documentation |
+| .github/workflows | ROS Humble Linux build and regression tests |
 
-- `external dependencies/OpenIGTLink/`
-  Git submodule pinned by `.gitmodules`. Build this library first.
-
-- `ros2_fbg_shape_pipeline_cpp/`
-  Canonical interrogator-to-shape ROS 2 stack.
-  Topic of interest for Slicer bridging: `/needle/state/current_shape` (`geometry_msgs/msg/PoseArray`).
-
-- `external dependencies/ws_smartneedle/src/ros2_igtl_bridge/`
-  Untouched collaborator OpenIGTLink transport package.
-
-- `external dependencies/ws_smartneedle/src/smartneedle_interface/`
-  Untouched collaborator package, retained as an external dependency.
-
-- `ros2_smartneedle_adapter/`
-  Local 100 Hz adapter and full-pipeline launch orchestration.
-
-- `external dependencies/SmartNeedleIGTL-3DSlicer/`
-  Git submodule. Add its `SmartNeedle` subfolder to Slicer's module paths.
-
-## Result
-
-The dependency URLs and pinned commits are recorded in `.gitmodules`. Initialize all dependencies with `git submodule update --init --recursive`.
+OpenIGTLink-build is generated locally and ignored. Colcon build/install/log
+outputs normally live under ~/.cache/fbg_colcon/<repository-name>_slicer.
+Do not copy generated build trees between machines.

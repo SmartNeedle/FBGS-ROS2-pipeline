@@ -76,6 +76,8 @@ if [[ ! -f "$INSTALL_SETUP" ]]; then
 fi
 
 unset AMENT_PREFIX_PATH COLCON_PREFIX_PATH CMAKE_PREFIX_PATH
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+export LD_LIBRARY_PATH="$ROOT/OpenIGTLink-build/bin:$ROOT/OpenIGTLink-build/lib:${LD_LIBRARY_PATH:-}"
 
 set +u
 source "$INSTALL_SETUP"
@@ -84,5 +86,6 @@ set -u
 ros2 launch ros2_smartneedle_adapter slicer_bridge.launch.py \
   mode:="$BRIDGE_MODE" \
   port:="$BRIDGE_PORT" \
-  ip:="$BRIDGE_IP"
+  ip:="$BRIDGE_IP" \
+  input_topic:="$INPUT_TOPIC"
 

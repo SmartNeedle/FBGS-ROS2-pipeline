@@ -1,0 +1,31 @@
+name: Linux pipeline
+on: [push, pull_request, workflow_dispatch]
+jobs:
+  humble:
+    runs-on: ubuntu-22.04
+    container: ros:humble-ros-base
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dependencies
+        shell: bash
+        run: |
+          apt-get update
+          apt-get install -y git cmake build-essential libboost-system-dev python3-colcon-common-extensions python3-pytest ros-humble-ament-cmake-gtest ros-humble-tf2-ros
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          bash scripts/init_dependencies.sh
+      - name: Build
+        shell: bash
+        run: |
+          cmake -S "external dependencies/OpenIGTLink" -B OpenIGTLink-build -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=OFF
+          cmake --build OpenIGTLink-build -j2
+          bash scripts/build_cpp_ros2_stack.sh --ros-distro humble --openigtlink-dir "$PWD/OpenIGTLink-build"
+      - name: Tests
+        shell: bash
+        run: |
+          source /opt/ros/humble/setup.bash
+          source "$HOME/.cache/fbg_colcon/$(basename "$PWD")_slicer/install/setup.bash"
+          export LD_LIBRARY_PATH="$PWD/OpenIGTLink-build/bin:$PWD/OpenIGTLink-build/lib:${LD_LIBRARY_PATH:-}"
+          python3 -m unittest discover -s tests -v
+          colcon test --base-paths ros2_fbg_shape_pipeline_cpp --build-base "$HOME/.cache/fbg_colcon/$(basename "$PWD")_slicer/build" --install-base "$HOME/.cache/fbg_colcon/$(basename "$PWD")_slicer/install" --merge-install --packages-select fbg_shape_pipeline_cpp
+          colcon test-result --test-result-base "$HOME/.cache/fbg_colcon/$(basename "$PWD")_slicer/build" --verbose
+          ros2 pkg executables ros2_smartneedle_adapter | grep smartneedle_igtl_100hz

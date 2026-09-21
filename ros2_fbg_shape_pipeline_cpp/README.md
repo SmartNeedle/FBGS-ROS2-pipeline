@@ -1,106 +1,36 @@
-# ROS 2 FBG Shape Pipeline Reference (C++)
+# ROS 2 FBG Shape Pipeline
 
-This folder contains a reference ROS 2 C++ architecture for integrating:
+The three C++ nodes implement TCP acquisition, calibrated angle processing, and
+piecewise-constant SE(3) reconstruction. See [architecture](docs/ARCHITECTURE.md)
+and the [canonical full-stack protocol](../docs/SLICER_ROS2_OPENIGTLINK_PROTOCOL.md).
 
-- a Windows machine that streams FBG interrogator data over TCP, and
-- a Linux ROS 2 machine that processes the stream and publishes a needle shape topic.
+## Calibration
 
-The design is based on:
+The source configuration is fbg_shape_pipeline_cpp/config/needle_config.txt.
+Full-stack launch helpers use that source file; direct ros2 launch uses the
+installed copy unless FBG_NEEDLE_CONFIG_FILE names another file.
+Rebuild after changing installed code or use the source configuration override.
 
-- the packet structure used in the existing `CPP Stream Client`, and
-- the node split used in `ros2_needle_shape_publisher_Dimitri`.
+Lengths labelled mm or without a unit are millimeters. Explicit legacy m keys
+are converted to millimeters by the calibration loader. Missing, duplicate,
+nonfinite, or inconsistent calibration values fail at launch.
+ROS parameters themselves use only needle_length_mm and sensor_arc_lengths_mm.
 
-The package is intentionally verbose and heavily commented so it can be used as:
+First FBG is 1-based; selected positions already correspond to the selected
+measurements. Curvature scales must all equal one. Angle transformation is
+sign * incoming_angle + offset_rad, wrapped to [-pi, pi].
+The current signs are all -1 and offsets all zero.
 
-- an implementation starting point,
-- an architecture reference,
-- a teaching aid for ROS 2 and C++, and
-- a test harness before the final shape-sensing model is fully ported.
+## Optional core-only operation
 
-## Contents
-
-- `fbg_shape_msgs/`: ROS 2 messages used to preserve timestamps and metadata.
-- `fbg_shape_pipeline_cpp/`: ROS 2 C++ package with three nodes:
-  - `tcp_receiver_node`: connects to the Windows TCP stream and publishes parsed frames.
-  - `curvature_processor_node`: performs lightweight processing/filtering and republishes a clean curvature topic.
-  - `shape_publisher_node`: reconstructs and publishes a `geometry_msgs/msg/PoseArray`.
-- `docs/ARCHITECTURE.md`: detailed architecture explanation.
-- `docs/TEST_PROTOCOL.md`: step-by-step test and validation procedure, including direct Ethernet (no-router) setup.
-- `tools/mock_fbg_stream_server.py`: mock interrogator stream generator.
-- `tools/latency_probe.py`: latency/rate validation subscriber.
-- `scripts/build_workspace.sh`: OneDrive/synced-folder-safe colcon build helper.
-- `scripts/launch_pipeline.sh`: launches from cache install by default, with fallback to local `./install` when present.
-
-## Important note
-
-The shape reconstruction in this reference package is a low-risk baseline implementation intended to be easy to understand and test. It is the right place to plug in your calibrated shape-sensing model once you are ready to port or wrap it in C++.
-
-
-## One-command Linux dependency setup
-
-To install all required Linux dependencies for this folder in one step, run:
+These commands deliberately omit the external bridge and Slicer adapter:
 
 ```bash
-cd /path/to/repo/CPP/ros2_fbg_shape_pipeline_cpp
-bash ./scripts/install_linux_dependencies.sh --ros-distro humble
+cd ros2_fbg_shape_pipeline_cpp
+bash scripts/build_workspace.sh --ros-distro humble
+bash scripts/launch_pipeline.sh --tcp-host 127.0.0.1 --tcp-port 50012
 ```
 
-To build in a way that avoids OneDrive/synced-folder symlink errors, run:
-
-```bash
-bash ./scripts/build_workspace.sh --ros-distro humble
-source "$HOME/.cache/fbg_colcon/$(basename "$PWD")/install/setup.bash"
-```
-
-The build helper performs a clean rebuild by default (removes prior build/install/log outputs) to avoid stale setup path issues after workflow changes. By default it installs under `$HOME/.cache/fbg_colcon/...` so launch can execute binaries even if your repo is on a `noexec` synced mount. Use `--no-clean` only when you explicitly want incremental rebuilds.
-
-Optional for local Linux filesystems only (in-workspace build dirs):
-
-```bash
-bash ./scripts/build_workspace.sh --ros-distro humble --use-local-build-dirs
-source install/setup.bash
-```
-
-## Calibration parameters
-
-At launch time, the pipeline attempts to load calibration values from:
-
-- `fbg_shape_pipeline_cpp/config/needle_config.txt`
-
-If the file is present, it overrides the corresponding values from `pipeline.yaml`.
-When launching through `scripts/launch_pipeline.sh`, the source-tree file
-`fbg_shape_pipeline_cpp/config/needle_config.txt` is exported explicitly so edits
-are picked up immediately.
-
-Supported keys in `needle_config.txt`:
-
-- `needle_length_mm` (or `needle_length`), expressed in millimeters
-- `first_fbg_index` (1-based, FBGs before this index are ignored)
-- `sensor_arc_lengths_mm`, expressed in millimeters
-- `curvature_scale`
-- `orientation_sign`
-- `orientation_offset_rad`
-
-Important: `first_fbg_index` is used to offset incoming interrogator arrays.
-The calibration vectors in `needle_config.txt` should already represent the
-included sensors (i.e., after ignoring leading FBGs).
-
-The current implementation expects the calibration quantities from the paper:
-
-- `sensor_arc_lengths_mm`: sensing locations along the needle
-- `curvature_scale`: the curvature calibration factor array `C(s)`
-- `orientation_sign`: the selected sign array `S-hat(s)`
-- `orientation_offset_rad`: the selected offset array `b-hat(s)`
-
-Unit note:
-
-- incoming interrogator curvature values remain in `1/mm`;
-- sensor positions, needle length, and reconstructed ROS coordinates remain in millimeters;
-- the OpenIGTLink adapter forwards those millimeter coordinates unchanged.
-
-The default placeholders live in:
-
-- `fbg_shape_pipeline_cpp/config/pipeline.yaml`
-
-Replace those placeholder values with your experimentally identified calibration data before running the real system.
+Do not source the core-only install when following the full-stack protocol:
+it uses a different cache path. Both workflows use the same source and calibration.
 

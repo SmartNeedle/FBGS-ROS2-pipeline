@@ -1,55 +1,49 @@
 # External Dependencies
 
-The pipeline uses three collaborator repositories as Git submodules. They are
-kept untouched so that this repository contains only the project-owned adapter,
-ROS 2 processing, launch files, and documentation.
+All external source remains untouched. The parent repository records exact
+commit gitlinks; .gitmodules records URLs.
 
-## Reproduce the checkout
+| Directory under external dependencies | Upstream | Pinned revision |
+| --- | --- | --- |
+| ws_smartneedle | https://github.com/SmartNeedle/ws_smartneedle.git | 82b27033b96fbe1b53dbdb62efb3c6d8cb0fa645 |
+| SmartNeedleIGTL-3DSlicer | https://github.com/SmartNeedle/SmartNeedleIGTL-3DSlicer.git | d2e4f822d5f80f72c5e5062fc6968857eda74d1c |
+| OpenIGTLink | https://github.com/openigtlink/OpenIGTLink.git | 94244fed7051e00cbcd4c341a7d7656be8ac404a |
 
-Clone with submodules, or initialize them after a normal clone:
-
-```bash
-git clone --recurse-submodules https://github.com/jfcoeur/FBGS-ROS2-pipeline.git
-cd FBGS-ROS2-pipeline
-git submodule update --init --recursive
-```
-
-The submodules are checked out at the exact commits recorded by the parent
-repository. Verify them with:
+## Initialize and synchronize
 
 ```bash
+git pull --ff-only
+bash scripts/init_dependencies.sh
 git submodule status
 ```
 
-The current dependency locations and upstream repositories are:
+The initialization script intentionally does not recurse. ws_smartneedle has
+gitlinks for ros2_hyperion_interrogator and ros2_needle_shape_publisher without
+a .gitmodules URL mapping. They are unused, and recursive initialization fails.
+Do not fix this by editing the external repository.
 
-| Local path | Upstream |
-| --- | --- |
-| `external dependencies/ws_smartneedle` | `https://github.com/SmartNeedle/ws_smartneedle.git` |
-| `external dependencies/SmartNeedleIGTL-3DSlicer` | `https://github.com/SmartNeedle/SmartNeedleIGTL-3DSlicer.git` |
-| `external dependencies/OpenIGTLink` | `https://github.com/openigtlink/OpenIGTLink.git` |
+## Use
 
-## How they are used
+OpenIGTLink supplies the native transport library. The ws_smartneedle repository
+supplies ros2_igtl_bridge and its message definitions. Its smartneedle_interface
+is retained as the original interface reference but is not built or launched:
+our separate ros2_smartneedle_adapter implements that contract with a 100 Hz timer.
+The local fbg_shape_msgs package defines the processing messages.
 
-- `OpenIGTLink` is built locally and supplied to the ROS 2 C++ build through `OpenIGTLink_DIR`.
-- `ws_smartneedle/src/ros2_igtl_bridge` supplies the untouched OpenIGTLink ROS bridge package.
-- `ws_smartneedle/src/smartneedle_interface` supplies the collaborator message and interface package used by the project-owned processing nodes.
-- `SmartNeedleIGTL-3DSlicer/SmartNeedle` is added to the Slicer module paths.
-- `ros2_smartneedle_adapter` is project-owned and publishes the collaborator OpenIGTLink topics at 100 Hz without modifying the external bridge.
+Only the external bridge package is selected from ws_smartneedle; the old
+interrogator, reconstruction, robot, virtual dataset, and 1 Hz interface paths
+are not part of the build. Slicer loads SmartNeedleIGTL-3DSlicer/SmartNeedle.
 
-## Updating intentionally
+The external smartneedle_interface package declares its license as TODO.
+Obtain the collaborators' licensing permission before distributing their source;
+this repository does not assign or change their licenses.
 
-Do not edit files inside a submodule as part of normal pipeline development.
-To adopt a newer collaborator revision, update the submodule in its directory,
-return to the parent repository, inspect the resulting gitlink change, and
-commit that change:
+## Deliberate upgrades
 
-```bash
-git -C "external dependencies/ws_smartneedle" fetch origin
-git -C "external dependencies/ws_smartneedle" checkout <reviewed-commit>
-git add .gitmodules "external dependencies/ws_smartneedle"
-git commit -m "Update ws_smartneedle dependency"
-```
+Fetch an upstream dependency, inspect a chosen revision, and check it out inside
+that submodule. Commit the resulting gitlink change in the parent only after
+testing. Do not use submodule update --remote for routine synchronization:
+it changes the tested dependency versions.
 
-Repeat the same pattern for the other submodules only after reviewing their
-compatibility with the current ROS and Slicer contracts.
+These pins reproduce the audited checkout; pinning does not mean newer upstream
+commits have been tested or should be adopted automatically.

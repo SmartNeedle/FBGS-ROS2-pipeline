@@ -16,7 +16,7 @@ namespace fbg_shape_pipeline_cpp
 //
 // Design:
 // - one background thread
-// - blocking exact-length reads
+// - interruptible exact-length reads
 // - parse and callback immediately
 // - reconnect automatically
 //
@@ -38,6 +38,7 @@ public:
 
   void start();
   void stop();
+  void set_endpoint(std::string host, std::uint16_t port);
 
 private:
   void run();
