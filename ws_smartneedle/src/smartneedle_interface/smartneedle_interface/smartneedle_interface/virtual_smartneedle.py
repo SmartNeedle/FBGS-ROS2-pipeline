@@ -17,6 +17,8 @@ class VirtualSmartNeedle(Node):
         #Declare node parameters
         self.declare_parameter('dataset', 'fbg_10') #Dataset file name
         self.declare_parameter('rate_hz', 100.0)
+        self.declare_parameter('point_count', 21)
+        self.declare_parameter('needle_length_m', 0.110)
 
         #Published topics
 
@@ -38,7 +40,35 @@ class VirtualSmartNeedle(Node):
 
         self.sensor = trial_data['sensor'][0]
         self.time_stamp = trial_data['time_stamp'][0]
+        self.point_count = int(self.get_parameter('point_count').value)
+        self.needle_length_m = float(self.get_parameter('needle_length_m').value)
+        if self.point_count < 2 or self.needle_length_m <= 0.0:
+            raise ValueError('point_count must be at least 2 and needle_length_m must be positive')
+        self.frames = [self._resample_frame(frame) for frame in self.sensor]
         self.i=0
+
+    def _resample_frame(self, frame):
+        points = np.asarray(frame, dtype=float).T
+        if points.shape[0] < 2:
+            points = np.zeros((2, 3), dtype=float)
+            points[1, 2] = self.needle_length_m * 1000.0
+
+        distances = np.linalg.norm(np.diff(points, axis=0), axis=1)
+        arc_length = np.concatenate(([0.0], np.cumsum(distances)))
+        total_length = arc_length[-1]
+        if total_length <= 1e-12:
+            normalized = np.zeros((self.point_count, 3), dtype=float)
+            normalized[:, 2] = np.linspace(0.0, self.needle_length_m * 1000.0, self.point_count)
+            return normalized / 1000.0
+
+        samples = np.linspace(0.0, total_length, self.point_count)
+        result = np.column_stack([
+            np.interp(samples, arc_length, points[:, axis])
+            for axis in range(3)
+        ])
+        result -= result[0]
+        result *= (self.needle_length_m * 1000.0) / total_length
+        return result / 1000.0
         
     # Publish current needle shape (PoseArray of 3D points)
     def timer_callback(self):
@@ -50,13 +80,12 @@ class VirtualSmartNeedle(Node):
         msg.header.frame_id = 'needle'
 
         # Populate message with X data from matlab file
-        X = self.sensor[self.i]
-        for j in range(X.shape[1]):
+        X = self.frames[self.i]
+        for j in range(X.shape[0]):
             pose = Pose()
-            # The MAT recording stores coordinates in millimeters; ROS uses meters.
-            pose.position.x = float(X[0][j]) / 1000.0
-            pose.position.y = float(X[1][j]) / 1000.0
-            pose.position.z = float(X[2][j]) / 1000.0
+            pose.position.x = float(X[j, 0])
+            pose.position.y = float(X[j, 1])
+            pose.position.z = float(X[j, 2])
             msg.poses.append(pose)
         self.i = (self.i + 1) % self.sensor.size
         self.publisher_shape.publish(msg)

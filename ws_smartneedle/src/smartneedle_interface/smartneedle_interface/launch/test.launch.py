@@ -30,8 +30,10 @@ def generate_launch_description():
         package="smartneedle_interface",
         executable="virtual_smartneedle",
         parameters=[{
-            "dataset": LaunchConfiguration("dataset"),
-            "rate_hz": LaunchConfiguration("rate_hz"),
+                "dataset": LaunchConfiguration("dataset"),
+                "rate_hz": LaunchConfiguration("rate_hz"),
+                "point_count": LaunchConfiguration("point_count"),
+                "needle_length_m": LaunchConfiguration("needle_length_m"),
         }],
     )
 
@@ -39,6 +41,8 @@ def generate_launch_description():
         [
             DeclareLaunchArgument("dataset", default_value="fbg_10"),
             DeclareLaunchArgument("rate_hz", default_value="100.0"),
+            DeclareLaunchArgument("point_count", default_value="21"),
+            DeclareLaunchArgument("needle_length_m", default_value="0.110"),
             DeclareLaunchArgument("mode", default_value="server"),
             DeclareLaunchArgument("port", default_value="18944"),
             DeclareLaunchArgument("ip", default_value="127.0.0.1"),
