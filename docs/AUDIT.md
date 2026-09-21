@@ -71,7 +71,8 @@ the represented length is 196.391633064447 mm. Regression references and the
 end-to-end straight-needle expectation have been updated for this model.
 
 - Physical interrogator and Slicer GUI tests require the user's Linux/hardware
-  setup. There is no raw vendor capture fixture in the active repository.
+  setup. Spectra framing was checked against a private ShapeCore capture;
+  synthetic regression tests cover the corrected convention without distributing it.
 - 100 Hz is a timer target; distinct input frame rate and Slicer rendering rate
   must be measured independently.
 - The external Slicer module retains the previous geometry during stale input,

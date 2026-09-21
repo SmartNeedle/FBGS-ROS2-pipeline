@@ -7,6 +7,53 @@
 
 using namespace fbg_shape_pipeline_cpp;
 
+TEST(Parser, ShapeCoreSpectraBlockLengthsAndTruncation)
+{
+  // Synthetic zero-valued spectra: protocol structure only, no captured data.
+  std::vector<std::uint8_t> payload(7, 0);
+  payload[5] = 7;
+  auto append = [&](const auto & value) {
+      const auto offset = payload.size();
+      payload.resize(offset + sizeof(value));
+      std::memcpy(payload.data() + offset, &value, sizeof(value));
+    };
+  for (std::uint8_t channel = 0; channel < 4; ++channel) {
+    append(std::uint32_t{3279}); // Excludes its own four-byte length prefix.
+    append(channel);
+    const std::uint32_t sizes[] = {8, 8, 2, 2052, 1028, 84, 44, 4};
+    for (std::uint16_t id = 0; id < 8; ++id) {
+      append(std::uint32_t{sizes[id] + 2});
+      append(id);
+      const auto offset = payload.size();
+      payload.resize(offset + sizes[id], 0);
+      if (id >= 3 && id <= 6) {
+        const std::uint32_t count = id <= 4 ? 512 : 20;
+        std::memcpy(payload.data() + offset, &count, 4);
+      }
+    }
+  }
+  const auto field_length = static_cast<std::uint32_t>(payload.size() - 5);
+  std::memcpy(payload.data() + 1, &field_length, 4);
+  const auto parsed = parse_frame_payload(payload);
+  ASSERT_TRUE(parsed.success) << parsed.error_message;
+  ASSERT_EQ(parsed.frame.spectra_cores.size(), 4U);
+  for (std::size_t i = 0; i < 4; ++i) {
+    const auto & core = parsed.frame.spectra_cores[i];
+    EXPECT_EQ(core.channel, i);
+    EXPECT_EQ(core.spectrum_wavelengths.size(), 512U);
+    EXPECT_EQ(core.spectrum_powers.size(), 512U);
+    EXPECT_EQ(core.peaks_wavelengths.size(), 20U);
+    EXPECT_EQ(core.peaks_powers.size(), 20U);
+    EXPECT_EQ(core.error_status, 0U);
+  }
+  // Keep outer framing intact but force a nested block to end inside a subfield.
+  const std::uint32_t shortened_block = 3278U;
+  std::memcpy(payload.data() + 7, &shortened_block, 4);
+  EXPECT_FALSE(parse_frame_payload(payload).success);
+  payload.pop_back();
+  EXPECT_FALSE(parse_frame_payload(payload).success);
+}
+
 TEST(Reconstruction, BaseOriginAndFullLengthStraightTip)
 {
   CurvatureFrameData frame;

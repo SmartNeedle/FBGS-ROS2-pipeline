@@ -154,17 +154,23 @@ ParseResult parse_frame_payload(const std::vector<std::uint8_t> & payload)
           while (offset < spectra_field_end) {
             FbgFrameData::SpectraCoreData core_data;
 
+            if (spectra_field_end - offset < sizeof(std::uint32_t)) {
+              throw std::runtime_error("Truncated spectra block length.");
+            }
             const auto block_length = read_scalar<std::uint32_t>(payload, offset);
-            if (block_length < 5U || block_length > spectra_field_end - offset) {
+            offset += sizeof(std::uint32_t);
+            // ShapeCore excludes the four-byte length prefix from block_length.
+            if (block_length < 1U || block_length > spectra_field_end - offset) {
               throw std::runtime_error("Invalid spectra block boundary.");
             }
             const std::size_t block_end = offset + block_length;
-            offset += sizeof(std::uint32_t);
-
             core_data.channel = read_scalar<std::uint8_t>(payload, offset);
             offset += sizeof(std::uint8_t);
 
             while (offset < block_end) {
+              if (block_end - offset < sizeof(std::int32_t) + sizeof(std::uint16_t)) {
+                throw std::runtime_error("Truncated spectra subfield header.");
+              }
               const auto subfield_length = read_scalar<std::int32_t>(payload, offset);
               offset += sizeof(std::int32_t);
 

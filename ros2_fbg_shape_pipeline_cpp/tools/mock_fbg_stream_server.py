@@ -92,7 +92,7 @@ def make_packet(sample_index: int, active_areas: int, rate_hz: float = 100.0) ->
             struct.pack("<I", len(peaks_power)) + struct.pack(f"<{len(peaks_power)}H", *peaks_power),
         )
         core_payload += pack_field(7, struct.pack("<I", 2500 + channel))
-        spectra_payload += struct.pack("<I", len(core_payload) + 4) + core_payload
+        spectra_payload += struct.pack("<I", len(core_payload)) + core_payload
 
     payload += pack_field(7, spectra_payload)
 

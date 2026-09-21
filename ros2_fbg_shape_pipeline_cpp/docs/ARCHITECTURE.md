@@ -25,12 +25,13 @@ length itself) and a payload. Fields 0..7 are error uint16, line uint64, source
 timestamp double, curvature float array, angle float array, shape matrix,
 temperature float array, and spectra blocks. Arrays include a uint32 count.
 Shape includes uint32 width and height. Spectra blocks include their own length,
-channel, and nested typed fields. The receiver validates framing and lengths.
+channel, and nested typed fields. A spectra block length excludes its four-byte
+length prefix, as verified with a real ShapeCore capture. The receiver validates framing and lengths.
 Packet size is bounded at 64 MiB. The supported Linux targets are little-endian.
 
-The available implementation defines the packet layout; no separate vendor
-protocol or captured hardware fixture is present in the active repository.
-Simulator/parser agreement alone cannot prove compatibility with every vendor version.
+The layout was checked against a locally supplied ShapeCore packet. The private
+capture is not distributed. Regression tests use synthetic zero-valued spectra
+with the same length convention; compatibility with every vendor version is not established.
 
 ## Calibration and reconstruction
 

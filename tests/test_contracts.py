@@ -60,6 +60,22 @@ class ContractTests(unittest.TestCase):
                 offset = end
             self.assertEqual(offset, len(packet))
             self.assertEqual(set(fields), set(range(8)))
+            spectra = fields[7]
+            offset = 0
+            channels = []
+            while offset < len(spectra):
+                block_length = struct.unpack_from("<I", spectra, offset)[0]
+                end = offset + 4 + block_length
+                self.assertLessEqual(end, len(spectra))
+                channels.append(spectra[offset + 4])
+                offset += 5
+                while offset < end:
+                    sub_length = struct.unpack_from("<I", spectra, offset)[0]
+                    self.assertGreaterEqual(sub_length, 2)
+                    offset += 4 + sub_length
+                    self.assertLessEqual(offset, end)
+                self.assertEqual(offset, end)
+            self.assertEqual(channels, [0, 1, 2, 3])
             for field_id in (3, 4, 6):
                 self.assertEqual(struct.unpack_from("<I", fields[field_id])[0], 20)
                 values = struct.unpack_from("<20f", fields[field_id], 4)
