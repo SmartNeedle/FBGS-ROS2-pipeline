@@ -116,7 +116,11 @@ TEST(Reconstruction, VaryingBendsMatchIndependentMatrixExponential)
   frame.kappa_y = {0.0,0.002,0.001,-0.002};
   frame.kappa_z = {0.0,0.0,0.0,0.0};
   const auto shape = reconstruct_shape(frame, 196.391633064447, "needle");
+  const auto direct_shape = reconstruct_shape(
+    frame.arc_lengths, frame.kappa_x, frame.kappa_y, frame.kappa_z,
+    196.391633064447, "needle");
   ASSERT_EQ(shape.poses.size(), 5U);
+  ASSERT_EQ(direct_shape.poses.size(), shape.poses.size());
   // Independent scipy.linalg.expm oracle with midpoint-bounded intervals.
   const double expected[4][3] = {
     {0.0, -0.41286912886361476, 16.585403974323565},
@@ -127,6 +131,9 @@ TEST(Reconstruction, VaryingBendsMatchIndependentMatrixExponential)
     EXPECT_NEAR(shape.poses[i+1].position.x, expected[i][0], 1e-9);
     EXPECT_NEAR(shape.poses[i+1].position.y, expected[i][1], 1e-9);
     EXPECT_NEAR(shape.poses[i+1].position.z, expected[i][2], 1e-9);
+    EXPECT_DOUBLE_EQ(direct_shape.poses[i+1].position.x, shape.poses[i+1].position.x);
+    EXPECT_DOUBLE_EQ(direct_shape.poses[i+1].position.y, shape.poses[i+1].position.y);
+    EXPECT_DOUBLE_EQ(direct_shape.poses[i+1].position.z, shape.poses[i+1].position.z);
   }
 }
 

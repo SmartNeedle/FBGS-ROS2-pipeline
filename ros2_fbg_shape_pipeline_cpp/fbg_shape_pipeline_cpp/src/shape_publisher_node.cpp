@@ -6,7 +6,6 @@
 #include "geometry_msgs/msg/pose_array.hpp"
 
 #include "fbg_shape_msgs/msg/curvature_frame.hpp"
-#include "fbg_shape_pipeline_cpp/frame_types.hpp"
 #include "fbg_shape_pipeline_cpp/shape_reconstruction.hpp"
 
 namespace fbg_shape_pipeline_cpp
@@ -39,19 +38,9 @@ public:
 private:
   void handle_curvature(const fbg_shape_msgs::msg::CurvatureFrame::SharedPtr msg)
   {
-    CurvatureFrameData frame;
-    frame.line_number = msg->line_number;
-    frame.source_timestamp = msg->source_timestamp;
-    frame.arc_lengths = msg->arc_lengths;
-    frame.curvature = msg->curvature;
-    frame.angle = msg->angle;
-    frame.kappa_x = msg->kappa_x;
-    frame.kappa_y = msg->kappa_y;
-    frame.kappa_z = msg->kappa_z;
-    frame.temperature = msg->temperature;
-
     auto pose_array = reconstruct_shape(
-      frame, needle_length_mm_, frame_id_);
+      msg->arc_lengths, msg->kappa_x, msg->kappa_y, msg->kappa_z,
+      needle_length_mm_, frame_id_);
     pose_array.header.stamp = msg->header.stamp;
     publisher_->publish(pose_array);
   }

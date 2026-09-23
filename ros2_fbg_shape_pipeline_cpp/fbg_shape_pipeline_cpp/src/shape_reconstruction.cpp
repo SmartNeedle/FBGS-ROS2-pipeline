@@ -128,19 +128,6 @@ geometry_msgs::msg::Quaternion quaternion_from_rotation(const Mat3 & r)
   return q;
 }
 
-std::vector<double> build_segment_boundaries(
-  const std::vector<double> & arc_lengths,
-  double needle_length_mm)
-{
-  std::vector<double> positions {0.0};
-  for (std::size_t i = 1; i < arc_lengths.size(); ++i) {
-    positions.push_back(arc_lengths[i - 1] +
-      0.5 * (arc_lengths[i] - arc_lengths[i - 1]));
-  }
-  positions.push_back(needle_length_mm);
-  return positions;
-}
-
 PoseState integrate_segment(
   const PoseState & start,
   const Vec3 & kappa,
@@ -187,7 +174,10 @@ PoseState integrate_segment(
 }  // namespace
 
 geometry_msgs::msg::PoseArray reconstruct_shape(
-  const CurvatureFrameData & frame,
+  const std::vector<double> & arc_lengths,
+  const std::vector<double> & kappa_x,
+  const std::vector<double> & kappa_y,
+  const std::vector<double> & kappa_z,
   double needle_length_mm,
   const std::string & frame_id)
 {
@@ -195,47 +185,40 @@ geometry_msgs::msg::PoseArray reconstruct_shape(
   pose_array.header.frame_id = frame_id;
 
   if (
-    frame.arc_lengths.empty() ||
-    frame.kappa_x.size() != frame.arc_lengths.size() ||
-    frame.kappa_y.size() != frame.arc_lengths.size() ||
-    frame.kappa_z.size() != frame.arc_lengths.size())
+    arc_lengths.empty() ||
+    kappa_x.size() != arc_lengths.size() ||
+    kappa_y.size() != arc_lengths.size() ||
+    kappa_z.size() != arc_lengths.size())
   {
     return pose_array;
   }
   if (!std::isfinite(needle_length_mm) || needle_length_mm <= 0.0 ||
-    needle_length_mm < frame.arc_lengths.back()) {
+    needle_length_mm < arc_lengths.back()) {
     return pose_array;
   }
-  for (std::size_t i = 0; i < frame.arc_lengths.size(); ++i) {
-    if (!std::isfinite(frame.arc_lengths[i]) || frame.arc_lengths[i] < 0.0 ||
-      (i > 0 && frame.arc_lengths[i] <= frame.arc_lengths[i - 1]) ||
-      !std::isfinite(frame.kappa_x[i]) || !std::isfinite(frame.kappa_y[i]) ||
-      !std::isfinite(frame.kappa_z[i]))
+  for (std::size_t i = 0; i < arc_lengths.size(); ++i) {
+    if (!std::isfinite(arc_lengths[i]) || arc_lengths[i] < 0.0 ||
+      (i > 0 && arc_lengths[i] <= arc_lengths[i - 1]) ||
+      !std::isfinite(kappa_x[i]) || !std::isfinite(kappa_y[i]) ||
+      !std::isfinite(kappa_z[i]))
     {
       return pose_array;
     }
   }
 
-  const auto output_positions = build_segment_boundaries(
-    frame.arc_lengths, needle_length_mm);
-
   PoseState state;
-  double current_s = output_positions.front();
+  double current_s = 0.0;
+  pose_array.poses.reserve(arc_lengths.size() + 1U);
+  geometry_msgs::msg::Pose base_pose;
+  base_pose.orientation.w = 1.0;
+  pose_array.poses.push_back(base_pose);
 
-  for (std::size_t output_index = 0; output_index < output_positions.size(); ++output_index) {
-    const double target_s = output_positions[output_index];
+  for (std::size_t i = 0; i < arc_lengths.size(); ++i) {
+    const double target_s = i + 1U == arc_lengths.size() ? needle_length_mm :
+      arc_lengths[i] + 0.5 * (arc_lengths[i + 1U] - arc_lengths[i]);
     const double segment_length = target_s - current_s;
-    if (segment_length > 0.0) {
-      // Each measurement owns the interval between adjacent midpoint boundaries.
-      const std::size_t kappa_index = output_index - 1U;
-      const Vec3 kappa {{
-          frame.kappa_x[kappa_index],
-          frame.kappa_y[kappa_index],
-          frame.kappa_z[kappa_index],
-        }};
-      state = integrate_segment(state, kappa, segment_length);
-    }
-
+    const Vec3 kappa {{kappa_x[i], kappa_y[i], kappa_z[i]}};
+    state = integrate_segment(state, kappa, segment_length);
     geometry_msgs::msg::Pose pose;
     pose.position.x = state.position[0];
     pose.position.y = state.position[1];
@@ -246,6 +229,16 @@ geometry_msgs::msg::PoseArray reconstruct_shape(
   }
 
   return pose_array;
+}
+
+geometry_msgs::msg::PoseArray reconstruct_shape(
+  const CurvatureFrameData & frame,
+  double needle_length_mm,
+  const std::string & frame_id)
+{
+  return reconstruct_shape(
+    frame.arc_lengths, frame.kappa_x, frame.kappa_y, frame.kappa_z,
+    needle_length_mm, frame_id);
 }
 
 }  // namespace fbg_shape_pipeline_cpp
