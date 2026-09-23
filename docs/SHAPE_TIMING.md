@@ -3,16 +3,23 @@
 After rebuilding and restarting the default fused stack, enable diagnostics with:
 
 ```bash
+ros2 param set /tcp_receiver_node timing_diagnostics true
 ros2 param set /curvature_processor_node timing_diagnostics true
 ```
 
 Within four seconds the pipeline terminal reports two-second windows of raw
-frames received, curvature frames published, and fused shapes published. It
+frames published by the TCP receiver, raw frames received by the curvature
+processor, curvature frames published, and fused shapes published. It
 also reports the mean/maximum time spent reconstructing and calling shape
 publish. Curvature and shape publication happen in the same callback, once
 per valid frame. A separate listener may still observe fewer samples.
 The report includes the first and last interrogator line numbers published;
 line numbers can skip before ROS receives the raw frame.
+The TCP receiver also reports its last published line number. The node timers
+are not synchronized; compare several windows rather than one pair of counts.
+If TCP publication is near 100 Hz while curvature receipt is lower, the raw
+ROS handoff is losing samples. If TCP publication is already below 100 Hz,
+investigate TCP input and parsing before changing the ROS shape path.
 
 For the older separate-node path, launch with --separate-shape and enable
 diagnostics on both nodes:
@@ -34,6 +41,7 @@ Disable them at runtime with:
 
 ```bash
 ros2 param set /curvature_processor_node timing_diagnostics false
+ros2 param set /tcp_receiver_node timing_diagnostics false
 ```
 
 Parameter changes take effect at the next reporting tick (up to two seconds).
