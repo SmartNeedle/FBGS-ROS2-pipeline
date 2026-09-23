@@ -1,5 +1,7 @@
 #include <algorithm>
 #include <chrono>
+#include <cstdint>
+#include <functional>
 #include <memory>
 #include <string>
 
@@ -52,13 +54,17 @@ private:
       const double divisor = received_ == 0 ? 1.0 : static_cast<double>(received_);
       RCLCPP_INFO(get_logger(),
         "Shape timing: completed callbacks=%zu rate=%.1f Hz; "
+        "first/last received line=%llu/%llu; "
         "reconstruct mean/max=%.3f/%.3f ms; publish call mean/max=%.3f/%.3f ms",
         received_, static_cast<double>(received_) / seconds,
+        static_cast<unsigned long long>(first_received_line_),
+        static_cast<unsigned long long>(last_received_line_),
         reconstruct_sum_ / divisor, reconstruct_max_, publish_sum_ / divisor, publish_max_);
     }
     timing_enabled_ = requested;
     window_start_ = now;
     received_ = 0;
+    first_received_line_ = last_received_line_ = 0;
     reconstruct_sum_ = reconstruct_max_ = publish_sum_ = publish_max_ = 0.0;
   }
 
@@ -73,7 +79,10 @@ private:
     publisher_->publish(pose_array);
     if (timing_enabled_) {
       const auto published = Clock::now();
-      ++received_;
+      if (received_++ == 0) {
+        first_received_line_ = msg->line_number;
+      }
+      last_received_line_ = msg->line_number;
       const double reconstruction_ms =
         std::chrono::duration<double, std::milli>(reconstructed - started).count();
       const double publication_ms =
@@ -92,6 +101,8 @@ private:
   // Timer and subscription share the default mutually exclusive callback group.
   bool timing_enabled_ {false};
   std::size_t received_ {0};
+  std::uint64_t first_received_line_ {0};
+  std::uint64_t last_received_line_ {0};
   Clock::time_point window_start_ {Clock::now()};
   double reconstruct_sum_ {0.0}, reconstruct_max_ {0.0};
   double publish_sum_ {0.0}, publish_max_ {0.0};

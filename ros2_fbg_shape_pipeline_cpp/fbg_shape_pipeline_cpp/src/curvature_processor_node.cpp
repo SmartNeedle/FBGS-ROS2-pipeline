@@ -1,6 +1,9 @@
 #include <algorithm>
+#include <chrono>
+#include <cstdint>
 #include <cmath>
 #include <deque>
+#include <functional>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -114,6 +117,9 @@ public:
     enable_temporal_averaging_ = declare_parameter<bool>("enable_temporal_averaging", false);
     temporal_average_window_ = static_cast<std::size_t>(
       declare_parameter<int>("temporal_average_window", 1));
+    declare_parameter<bool>("timing_diagnostics", false);
+    diagnostics_timer_ = create_wall_timer(
+      std::chrono::seconds(2), std::bind(&CurvatureProcessorNode::report_counts, this));
 
     normalize_parameters();
 
@@ -133,6 +139,25 @@ public:
   }
 
 private:
+  void report_counts()
+  {
+    const bool requested = get_parameter("timing_diagnostics").as_bool();
+    if (requested && diagnostics_enabled_) {
+      const double seconds = std::chrono::duration<double>(
+        std::chrono::steady_clock::now() - window_start_).count();
+      RCLCPP_INFO(get_logger(),
+        "Curvature counts: received=%zu published=%zu rate=%.1f Hz; "
+        "first/last published line=%llu/%llu",
+        received_, published_, static_cast<double>(published_) / seconds,
+        static_cast<unsigned long long>(first_published_line_),
+        static_cast<unsigned long long>(last_published_line_));
+    }
+    diagnostics_enabled_ = requested;
+    window_start_ = std::chrono::steady_clock::now();
+    received_ = published_ = 0;
+    first_published_line_ = last_published_line_ = 0;
+  }
+
   void normalize_parameters()
   {
     if (sensor_arc_lengths_mm_.empty()) {
@@ -173,6 +198,9 @@ private:
 
   void handle_frame(const fbg_shape_msgs::msg::FbgFrame::SharedPtr msg)
   {
+    if (diagnostics_enabled_) {
+      ++received_;
+    }
     if (msg->error != 0) {
       RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 2000,
         "Interrogator error %u: suppressing reconstruction", msg->error);
@@ -271,6 +299,12 @@ private:
     output.kappa_z = kappa_z;
     output.temperature = raw_temperature;
     publisher_->publish(output);
+    if (diagnostics_enabled_) {
+      if (published_++ == 0) {
+        first_published_line_ = msg->line_number;
+      }
+      last_published_line_ = msg->line_number;
+    }
   }
 
   std::string input_topic_;
@@ -287,6 +321,13 @@ private:
   std::size_t data_average_window_ {1U};
   bool enable_temporal_averaging_ {false};
   std::size_t temporal_average_window_ {1U};
+  bool diagnostics_enabled_ {false};
+  std::size_t received_ {0};
+  std::size_t published_ {0};
+  std::uint64_t first_published_line_ {0};
+  std::uint64_t last_published_line_ {0};
+  std::chrono::steady_clock::time_point window_start_ {std::chrono::steady_clock::now()};
+  rclcpp::TimerBase::SharedPtr diagnostics_timer_;
 
   std::deque<std::vector<double>> raw_curvature_history_;
   std::deque<std::vector<double>> raw_angle_history_;
