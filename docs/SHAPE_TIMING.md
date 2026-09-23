@@ -36,3 +36,9 @@ ros2 param set /curvature_processor_node timing_diagnostics false
 
 Parameter changes take effect at the next reporting tick (up to two seconds).
 An idle input reports zero callbacks; zero durations then mean no samples.
+
+The local Slicer bridge launch routes the external bridge's verbose stdout to
+the ROS launch log directory, printed at startup, instead of the terminal.
+This does not modify the external bridge; inspect that log if connection details
+are needed. Compare rates with the same source and Slicer connection after this
+change to see whether terminal output affected scheduling.

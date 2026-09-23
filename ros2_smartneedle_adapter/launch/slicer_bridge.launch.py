@@ -14,7 +14,7 @@ def generate_launch_description():
         Node(
             package="ros2_igtl_bridge",
             executable="igtl_node",
-            output="screen",
+            output="log",
             parameters=[{
                 "RIB_server_ip": LaunchConfiguration("ip"),
                 "RIB_port": LaunchConfiguration("port"),
