@@ -132,9 +132,14 @@ class PipelineTests(unittest.TestCase):
             reader.start()
             pump(1.0)
             first_message = len(wire)
+            first_shape = len(shapes)
             measurement_start = time.monotonic()
             pump(2)
             measurement_duration = time.monotonic() - measurement_start
+            shape_rate = (len(shapes) - first_shape) / measurement_duration
+            print(f"Steady reconstructed shape rate after warmup: {shape_rate:.1f} Hz")
+            self.assertGreaterEqual(shape_rate, 90.0, "Reconstruction is below the 100 Hz target tolerance")
+            self.assertLessEqual(shape_rate, 110.0, "Unexpected duplicate shape output")
             points = [item for item in wire[first_message:] if item[0] == b"POINT"]
             rate = len(points) / measurement_duration
             print(f"Steady OpenIGTLink POINT throughput after warmup: {rate:.1f} Hz")
