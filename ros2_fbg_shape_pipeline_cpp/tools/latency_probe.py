@@ -7,23 +7,23 @@ import time
 import rclpy
 from geometry_msgs.msg import PoseArray
 from rclpy.node import Node
-from fbg_shape_msgs.msg import FbgFrame
+from fbg_shape_msgs.msg import CurvatureFrame
 
 
 class LatencyProbe(Node):
     def __init__(self):
         super().__init__("latency_probe")
         self.receipt_to_shape = deque(maxlen=2000)
-        self.frame_times = deque(maxlen=2000)
+        self.curvature_times = deque(maxlen=2000)
         self.shape_times = deque(maxlen=2000)
         self.declare_parameter("source_unix_seconds", False)
         self.source_latency = deque(maxlen=2000)
-        self.create_subscription(FbgFrame, "/needle/fbg_frame", self.handle_frame, 1)
-        self.create_subscription(PoseArray, "/needle/state/current_shape", self.handle_shape, 1)
+        self.create_subscription(CurvatureFrame, "/needle/state/curvatures", self.handle_curvature, 10)
+        self.create_subscription(PoseArray, "/needle/state/current_shape", self.handle_shape, 10)
         self.create_timer(2.0, self.report)
 
-    def handle_frame(self, msg):
-        self.frame_times.append(time.monotonic())
+    def handle_curvature(self, msg):
+        self.curvature_times.append(time.monotonic())
         if self.get_parameter("source_unix_seconds").value:
             self.source_latency.append((time.time() - msg.source_timestamp) * 1000.0)
 
@@ -47,7 +47,8 @@ class LatencyProbe(Node):
                     f"max={max(ordered):.2f} ms")
 
         self.get_logger().info(
-            f"Window: input={rate(self.frame_times):.1f} Hz shape={rate(self.shape_times):.1f} Hz; "
+            f"Window: curvature={rate(self.curvature_times):.1f} Hz "
+            f"shape={rate(self.shape_times):.1f} Hz; "
             f"ROS receipt -> shape subscriber: {stats(self.receipt_to_shape)}"
         )
         if self.get_parameter("source_unix_seconds").value:
