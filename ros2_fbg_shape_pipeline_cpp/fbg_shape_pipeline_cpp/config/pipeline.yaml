@@ -4,6 +4,7 @@ tcp_receiver_node:
     tcp_port: 50012
     reconnect_ms: 1000
     output_topic: "/needle/fbg_frame"
+    compact_output_topic: ""
 
 curvature_processor_node:
   ros__parameters:

@@ -17,6 +17,8 @@ def generate_launch_description():
             "tcp_host": LaunchConfiguration("tcp_host"),
             "tcp_port": LaunchConfiguration("tcp_port"),
             "fused_shape": LaunchConfiguration("fused_shape"),
+            "compact_topic": LaunchConfiguration("compact_topic"),
+            "sensor_input_topic": LaunchConfiguration("sensor_input_topic"),
         }.items(),
     )
     bridge = IncludeLaunchDescription(
@@ -35,6 +37,8 @@ def generate_launch_description():
         DeclareLaunchArgument("tcp_host", default_value="127.0.0.1"),
         DeclareLaunchArgument("tcp_port", default_value="50012"),
         DeclareLaunchArgument("fused_shape", default_value="true"),
+        DeclareLaunchArgument("compact_topic", default_value="/needle/fbg_sensor_frame"),
+        DeclareLaunchArgument("sensor_input_topic", default_value="/needle/fbg_sensor_frame"),
         DeclareLaunchArgument("mode", default_value="server"),
         DeclareLaunchArgument("bridge_ip", default_value="127.0.0.1"),
         DeclareLaunchArgument("bridge_port", default_value="18944"),

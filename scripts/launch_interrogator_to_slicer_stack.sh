@@ -16,6 +16,7 @@ Options:
   --bridge-ip <value>     OpenIGTLink IP/host for client mode (default: 127.0.0.1).
   --bridge-mode <value>   OpenIGTLink mode: server or client (default: server).
   --separate-shape        Use the separate shape node instead of fused processing.
+  --full-frame-input      Use the full raw ROS topic for processing (comparison mode).
   -h, --help              Show this help text.
 USAGE
 }
@@ -27,6 +28,8 @@ BRIDGE_PORT="18944"
 BRIDGE_IP="127.0.0.1"
 BRIDGE_MODE="server"
 FUSED_SHAPE="true"
+COMPACT_TOPIC="/needle/fbg_sensor_frame"
+SENSOR_INPUT_TOPIC="/needle/fbg_sensor_frame"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -62,6 +65,11 @@ while [[ $# -gt 0 ]]; do
       ;;
     --separate-shape)
       FUSED_SHAPE="false"
+      shift
+      ;;
+    --full-frame-input)
+      COMPACT_TOPIC=""
+      SENSOR_INPUT_TOPIC="/needle/fbg_frame"
       shift
       ;;
     -h|--help)
@@ -103,4 +111,6 @@ ros2 launch ros2_smartneedle_adapter full_pipeline.launch.py \
   mode:="$BRIDGE_MODE" \
   bridge_ip:="$BRIDGE_IP" \
   bridge_port:="$BRIDGE_PORT" \
-  fused_shape:="$FUSED_SHAPE"
+  fused_shape:="$FUSED_SHAPE" \
+  compact_topic:="$COMPACT_TOPIC" \
+  sensor_input_topic:="$SENSOR_INPUT_TOPIC"

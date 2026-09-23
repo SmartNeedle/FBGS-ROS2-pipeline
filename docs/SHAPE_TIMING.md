@@ -20,6 +20,9 @@ are not synchronized; compare several windows rather than one pair of counts.
 If TCP publication is near 100 Hz while curvature receipt is lower, the raw
 ROS handoff is losing samples. If TCP publication is already below 100 Hz,
 investigate TCP input and parsing before changing the ROS shape path.
+With the default compact input, the TCP counter counts complete raw messages
+after both compact and full publication; the processor counts compact messages.
+The two publications come from the same parsed frame and share its timestamp.
 
 For the older separate-node path, launch with --separate-shape and enable
 diagnostics on both nodes:

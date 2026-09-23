@@ -4,6 +4,9 @@ Real interrogator data and simulated TCP data use the same receiver, calibration
 curvature processing, SE(3) reconstruction, and OpenIGTLink output.
 The default C++ launch reconstructs shape in the curvature callback to avoid an
 extra ROS message handoff; --separate-shape restores the previous layout.
+The receiver publishes a compact sensor-only frame for this processing path
+while retaining complete raw frames on /needle/fbg_frame. Use
+--full-frame-input to compare against the original raw-frame handoff.
 
 Start with [the Linux/Slicer protocol](docs/SLICER_ROS2_OPENIGTLINK_PROTOCOL.md).
 See [architecture](ros2_fbg_shape_pipeline_cpp/docs/ARCHITECTURE.md),

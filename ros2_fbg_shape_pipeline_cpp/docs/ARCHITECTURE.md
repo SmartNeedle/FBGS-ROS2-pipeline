@@ -4,7 +4,8 @@
 
 ```text
 Real interrogator TCP server OR local simulated TCP server
-  -> tcp_receiver_node -> /needle/fbg_frame (FbgFrame)
+  -> tcp_receiver_node -> /needle/fbg_sensor_frame (sensor-only FbgFrame)
+                       -> /needle/fbg_frame (complete FbgFrame for inspection)
   -> curvature_processor_node -> /needle/state/curvatures (CurvatureFrame)
                             -> /needle/state/current_shape (PoseArray, mm)
   -> local ros2_smartneedle_adapter
@@ -13,9 +14,12 @@ Real interrogator TCP server OR local simulated TCP server
   -> Slicer OpenIGTLinkIF + untouched SmartNeedle module
 ```
 
-The simulator replaces only the incoming TCP data. The packet's optional shape
-and spectra fields are placeholders, preserved for inspection but never used
-to reconstruct the displayed shape.
+The simulator replaces only the incoming TCP data. The receiver publishes the
+compact sensor fields first so processing can start without deserializing the
+large spectra payload. The full raw topic still includes the packet's optional
+shape and spectra fields for inspection. Neither field drives reconstruction.
+The --full-frame-input launcher option restores processing from the full raw
+topic and disables the compact publication for comparison.
 
 ## Packet contract
 

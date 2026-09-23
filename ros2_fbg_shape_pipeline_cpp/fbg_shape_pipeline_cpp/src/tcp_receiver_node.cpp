@@ -29,11 +29,16 @@ public:
     }
     const auto port = static_cast<std::uint16_t>(port_value);
     const auto topic_name = declare_parameter<std::string>("output_topic", "/needle/fbg_frame");
+    const auto compact_topic_name = declare_parameter<std::string>("compact_output_topic", "");
     declare_parameter<bool>("timing_diagnostics", false);
     diagnostics_timer_ = create_wall_timer(
       std::chrono::seconds(2), std::bind(&TcpReceiverNode::report_counts, this));
 
     publisher_ = create_publisher<fbg_shape_msgs::msg::FbgFrame>(topic_name, rclcpp::QoS(1));
+    if (!compact_topic_name.empty()) {
+      compact_publisher_ = create_publisher<fbg_shape_msgs::msg::FbgFrame>(
+        compact_topic_name, rclcpp::QoS(1));
+    }
 
     client_ = std::make_unique<TcpInterrogatorClient>(
       host,
@@ -124,6 +129,10 @@ private:
     msg.curvature = frame.curvature;
     msg.angle = frame.angle;
     msg.temperature = frame.temperature;
+    if (compact_publisher_) {
+      // Processing needs only the sensor fields; preserve the full packet on the raw topic.
+      compact_publisher_->publish(msg);
+    }
     msg.shape_points = frame.shape_points;
     msg.shape_stride = frame.shape_width;
     msg.shape_height = frame.shape_height;
@@ -151,6 +160,7 @@ private:
   }
 
   rclcpp::Publisher<fbg_shape_msgs::msg::FbgFrame>::SharedPtr publisher_;
+  rclcpp::Publisher<fbg_shape_msgs::msg::FbgFrame>::SharedPtr compact_publisher_;
   // The TCP callback runs on the client's I/O thread; the report runs on ROS.
   std::atomic<bool> diagnostics_enabled_ {false};
   std::atomic<std::uint64_t> published_count_ {0};

@@ -86,6 +86,12 @@ By default the curvature processor publishes both the curvature topic and the
 reconstructed shape topic in one callback. Add --separate-shape to the helper
 command to restore the two-node path for rate and latency comparisons. Only
 one of these paths publishes /needle/state/current_shape per launch.
+The receiver also publishes a compact /needle/fbg_sensor_frame for processing
+before publishing the complete /needle/fbg_frame for inspection. The compact
+message has the same header, error, line number, source timestamp, curvature,
+angle, and temperature, with empty packet shape and spectra fields. Add
+--full-frame-input to process the complete raw message instead; this disables
+the compact topic and allows a direct rate/latency comparison.
 
 ## 3. Configure Slicer
 
