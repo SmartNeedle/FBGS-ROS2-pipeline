@@ -11,8 +11,10 @@
 
 #include "rclcpp/rclcpp.hpp"
 
+#include "geometry_msgs/msg/pose_array.hpp"
 #include "fbg_shape_msgs/msg/curvature_frame.hpp"
 #include "fbg_shape_msgs/msg/fbg_frame.hpp"
+#include "fbg_shape_pipeline_cpp/shape_reconstruction.hpp"
 
 namespace fbg_shape_pipeline_cpp
 {
@@ -100,6 +102,11 @@ public:
   {
     input_topic_ = declare_parameter<std::string>("input_topic", "/needle/fbg_frame");
     output_topic_ = declare_parameter<std::string>("output_topic", "/needle/state/curvatures");
+    publish_shape_ = declare_parameter<bool>("publish_shape", false);
+    shape_output_topic_ = declare_parameter<std::string>(
+      "shape_output_topic", "/needle/state/current_shape");
+    shape_frame_id_ = declare_parameter<std::string>("shape_frame_id", "needle");
+    needle_length_mm_ = declare_parameter<double>("needle_length_mm", 200.0);
 
     sensor_arc_lengths_mm_ = declare_parameter<std::vector<double>>(
       "sensor_arc_lengths_mm", std::vector<double>{0.0, 10.0, 20.0, 30.0});
@@ -126,6 +133,10 @@ public:
     // Keep only the newest message in the DDS queue because this pipeline is
     // intended for real-time feedback, not historical replay.
     publisher_ = create_publisher<fbg_shape_msgs::msg::CurvatureFrame>(output_topic_, rclcpp::QoS(1));
+    if (publish_shape_) {
+      shape_publisher_ = create_publisher<geometry_msgs::msg::PoseArray>(
+        shape_output_topic_, rclcpp::QoS(1));
+    }
     subscription_ = create_subscription<fbg_shape_msgs::msg::FbgFrame>(
       input_topic_,
       rclcpp::QoS(1),
@@ -151,10 +162,21 @@ private:
         received_, published_, static_cast<double>(published_) / seconds,
         static_cast<unsigned long long>(first_published_line_),
         static_cast<unsigned long long>(last_published_line_));
+      if (publish_shape_) {
+        const double divisor = shapes_published_ == 0 ? 1.0 :
+          static_cast<double>(shapes_published_);
+        RCLCPP_INFO(get_logger(),
+          "Fused shape: published=%zu rate=%.1f Hz; reconstruct and publish "
+          "mean/max=%.3f/%.3f ms",
+          shapes_published_, static_cast<double>(shapes_published_) / seconds,
+          shape_sum_ms_ / divisor, shape_max_ms_);
+      }
     }
     diagnostics_enabled_ = requested;
     window_start_ = std::chrono::steady_clock::now();
     received_ = published_ = 0;
+    shapes_published_ = 0;
+    shape_sum_ms_ = shape_max_ms_ = 0.0;
     first_published_line_ = last_published_line_ = 0;
   }
 
@@ -299,6 +321,22 @@ private:
     output.kappa_z = kappa_z;
     output.temperature = raw_temperature;
     publisher_->publish(output);
+    if (publish_shape_) {
+      const auto started = diagnostics_enabled_ ?
+        std::chrono::steady_clock::now() : std::chrono::steady_clock::time_point{};
+      auto shape = reconstruct_shape(
+        output.arc_lengths, output.kappa_x, output.kappa_y, output.kappa_z,
+        needle_length_mm_, shape_frame_id_);
+      shape.header.stamp = output.header.stamp;
+      shape_publisher_->publish(shape);
+      if (diagnostics_enabled_) {
+        const double elapsed_ms = std::chrono::duration<double, std::milli>(
+          std::chrono::steady_clock::now() - started).count();
+        ++shapes_published_;
+        shape_sum_ms_ += elapsed_ms;
+        shape_max_ms_ = std::max(shape_max_ms_, elapsed_ms);
+      }
+    }
     if (diagnostics_enabled_) {
       if (published_++ == 0) {
         first_published_line_ = msg->line_number;
@@ -309,6 +347,10 @@ private:
 
   std::string input_topic_;
   std::string output_topic_;
+  std::string shape_output_topic_;
+  std::string shape_frame_id_;
+  double needle_length_mm_ {200.0};
+  bool publish_shape_ {false};
 
   std::vector<double> sensor_arc_lengths_mm_;
   std::vector<double> curvature_scale_;
@@ -324,6 +366,9 @@ private:
   bool diagnostics_enabled_ {false};
   std::size_t received_ {0};
   std::size_t published_ {0};
+  std::size_t shapes_published_ {0};
+  double shape_sum_ms_ {0.0};
+  double shape_max_ms_ {0.0};
   std::uint64_t first_published_line_ {0};
   std::uint64_t last_published_line_ {0};
   std::chrono::steady_clock::time_point window_start_ {std::chrono::steady_clock::now()};
@@ -341,6 +386,7 @@ private:
   std::deque<std::vector<double>> temperature_history_;
 
   rclcpp::Publisher<fbg_shape_msgs::msg::CurvatureFrame>::SharedPtr publisher_;
+  rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr shape_publisher_;
   rclcpp::Subscription<fbg_shape_msgs::msg::FbgFrame>::SharedPtr subscription_;
 };
 

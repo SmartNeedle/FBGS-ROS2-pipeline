@@ -6,7 +6,7 @@
 Real interrogator TCP server OR local simulated TCP server
   -> tcp_receiver_node -> /needle/fbg_frame (FbgFrame)
   -> curvature_processor_node -> /needle/state/curvatures (CurvatureFrame)
-  -> shape_publisher_node -> /needle/state/current_shape (PoseArray, mm)
+                            -> /needle/state/current_shape (PoseArray, mm)
   -> local ros2_smartneedle_adapter
   -> IGTL_POINT_OUT + IGTL_STRING_OUT
   -> untouched external ros2_igtl_bridge
@@ -64,9 +64,12 @@ received points; it does not alter the ROS reconstruction or transmitted points.
 
 ## Timing and failures
 
-Internal ROS queues have depth one. The shape node reconstructs synchronously
-in its curvature subscription callback; DDS may replace queued samples if the
-callback cannot keep pace with input.
+Internal ROS queues have depth one. By default the curvature processor
+reconstructs and publishes the shape in the same FbgFrame callback that
+publishes CurvatureFrame. This removes the curvature-to-shape DDS handoff while
+keeping both topic contracts. The separate shape node remains available through
+the --separate-shape launcher option for comparison. DDS may replace queued
+raw frames if the curvature callback cannot keep pace with input.
 The simulator uses monotonic deadlines targeting 100 Hz. Curvature magnitude
 is 0.002..0.003 1/mm (2..3 1/m); temperature is a Celsius placeholder and angle
 is radians. Target publishing rates are not hard real-time guarantees.

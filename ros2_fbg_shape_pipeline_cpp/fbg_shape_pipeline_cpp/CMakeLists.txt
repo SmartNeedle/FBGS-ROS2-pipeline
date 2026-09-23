@@ -45,6 +45,7 @@ add_executable(curvature_processor_node src/curvature_processor_node.cpp)
 target_link_libraries(curvature_processor_node fbg_shape_pipeline_core)
 ament_target_dependencies(curvature_processor_node
   fbg_shape_msgs
+  geometry_msgs
   rclcpp
 )
 

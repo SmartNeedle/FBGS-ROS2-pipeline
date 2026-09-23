@@ -16,6 +16,7 @@ def generate_launch_description():
         launch_arguments={
             "tcp_host": LaunchConfiguration("tcp_host"),
             "tcp_port": LaunchConfiguration("tcp_port"),
+            "fused_shape": LaunchConfiguration("fused_shape"),
         }.items(),
     )
     bridge = IncludeLaunchDescription(
@@ -33,6 +34,7 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument("tcp_host", default_value="127.0.0.1"),
         DeclareLaunchArgument("tcp_port", default_value="50012"),
+        DeclareLaunchArgument("fused_shape", default_value="true"),
         DeclareLaunchArgument("mode", default_value="server"),
         DeclareLaunchArgument("bridge_ip", default_value="127.0.0.1"),
         DeclareLaunchArgument("bridge_port", default_value="18944"),

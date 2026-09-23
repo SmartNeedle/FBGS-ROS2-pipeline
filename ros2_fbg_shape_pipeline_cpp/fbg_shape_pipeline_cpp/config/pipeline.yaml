@@ -9,6 +9,10 @@ curvature_processor_node:
   ros__parameters:
     input_topic: "/needle/fbg_frame"
     output_topic: "/needle/state/curvatures"
+    publish_shape: false
+    shape_output_topic: "/needle/state/current_shape"
+    shape_frame_id: "needle"
+    needle_length_mm: 200.0
     first_fbg_index: 1
     sensor_arc_lengths_mm: [0.0, 10.0, 20.0, 30.0]
     curvature_scale: [1.0, 1.0, 1.0, 1.0]

@@ -15,6 +15,7 @@ Options:
   --bridge-port <value>   OpenIGTLink port exposed to Slicer (default: 18944).
   --bridge-ip <value>     OpenIGTLink IP/host for client mode (default: 127.0.0.1).
   --bridge-mode <value>   OpenIGTLink mode: server or client (default: server).
+  --separate-shape        Use the separate shape node instead of fused processing.
   -h, --help              Show this help text.
 USAGE
 }
@@ -25,6 +26,7 @@ TCP_PORT="50012"
 BRIDGE_PORT="18944"
 BRIDGE_IP="127.0.0.1"
 BRIDGE_MODE="server"
+FUSED_SHAPE="true"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -57,6 +59,10 @@ while [[ $# -gt 0 ]]; do
       [[ $# -ge 2 ]] || { echo "Error: --bridge-mode requires a value." >&2; usage; exit 1; }
       BRIDGE_MODE="$2"
       shift 2
+      ;;
+    --separate-shape)
+      FUSED_SHAPE="false"
+      shift
       ;;
     -h|--help)
       usage
@@ -96,5 +102,5 @@ ros2 launch ros2_smartneedle_adapter full_pipeline.launch.py \
   tcp_port:="$TCP_PORT" \
   mode:="$BRIDGE_MODE" \
   bridge_ip:="$BRIDGE_IP" \
-  bridge_port:="$BRIDGE_PORT"
-
+  bridge_port:="$BRIDGE_PORT" \
+  fused_shape:="$FUSED_SHAPE"

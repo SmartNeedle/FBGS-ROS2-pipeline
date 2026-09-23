@@ -2,6 +2,8 @@
 
 Real interrogator data and simulated TCP data use the same receiver, calibration,
 curvature processing, SE(3) reconstruction, and OpenIGTLink output.
+The default C++ launch reconstructs shape in the curvature callback to avoid an
+extra ROS message handoff; --separate-shape restores the previous layout.
 
 Start with [the Linux/Slicer protocol](docs/SLICER_ROS2_OPENIGTLINK_PROTOCOL.md).
 See [architecture](ros2_fbg_shape_pipeline_cpp/docs/ARCHITECTURE.md),

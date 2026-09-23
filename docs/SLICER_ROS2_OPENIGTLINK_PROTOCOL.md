@@ -82,6 +82,10 @@ bash scripts/launch_interrogator_to_slicer_stack.sh \
 The helper uses the source-tree calibration unless FBG_NEEDLE_CONFIG_FILE is
 already set. It also sets the library search path. Waiting for an IGTL connection
 is normal until Slicer starts its connector.
+By default the curvature processor publishes both the curvature topic and the
+reconstructed shape topic in one callback. Add --separate-shape to the helper
+command to restore the two-node path for rate and latency comparisons. Only
+one of these paths publishes /needle/state/current_shape per launch.
 
 ## 3. Configure Slicer
 
