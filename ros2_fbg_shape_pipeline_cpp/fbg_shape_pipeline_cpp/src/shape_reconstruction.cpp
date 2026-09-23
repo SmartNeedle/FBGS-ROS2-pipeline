@@ -13,119 +13,39 @@ namespace
 {
 
 using Vec3 = std::array<double, 3>;
-using Mat3 = std::array<std::array<double, 3>, 3>;
+using Quaternion = std::array<double, 4>;  // x, y, z, w
 
 struct PoseState
 {
-  Mat3 rotation {{
-      {{1.0, 0.0, 0.0}},
-      {{0.0, 1.0, 0.0}},
-      {{0.0, 0.0, 1.0}},
-    }};
+  Quaternion rotation {{0.0, 0.0, 0.0, 1.0}};
   Vec3 position {{0.0, 0.0, 0.0}};
 };
 
-Mat3 identity_matrix()
+Vec3 cross(const Vec3 & a, const Vec3 & b)
+{
+  return {{a[1] * b[2] - a[2] * b[1],
+      a[2] * b[0] - a[0] * b[2],
+      a[0] * b[1] - a[1] * b[0]}};
+}
+
+Quaternion multiply(const Quaternion & a, const Quaternion & b)
 {
   return {{
-      {{1.0, 0.0, 0.0}},
-      {{0.0, 1.0, 0.0}},
-      {{0.0, 0.0, 1.0}},
+      a[3] * b[0] + a[0] * b[3] + a[1] * b[2] - a[2] * b[1],
+      a[3] * b[1] - a[0] * b[2] + a[1] * b[3] + a[2] * b[0],
+      a[3] * b[2] + a[0] * b[1] - a[1] * b[0] + a[2] * b[3],
+      a[3] * b[3] - a[0] * b[0] - a[1] * b[1] - a[2] * b[2],
     }};
 }
 
-Mat3 skew(const Vec3 & v)
+Vec3 rotate(const Quaternion & q, const Vec3 & v)
 {
-  return {{
-      {{0.0, -v[2], v[1]}},
-      {{v[2], 0.0, -v[0]}},
-      {{-v[1], v[0], 0.0}},
-    }};
-}
-
-Mat3 add(const Mat3 & a, const Mat3 & b)
-{
-  Mat3 out {};
-  for (int r = 0; r < 3; ++r) {
-    for (int c = 0; c < 3; ++c) {
-      out[r][c] = a[r][c] + b[r][c];
-    }
-  }
-  return out;
-}
-
-Mat3 scale(const Mat3 & a, double s)
-{
-  Mat3 out {};
-  for (int r = 0; r < 3; ++r) {
-    for (int c = 0; c < 3; ++c) {
-      out[r][c] = a[r][c] * s;
-    }
-  }
-  return out;
-}
-
-Mat3 multiply(const Mat3 & a, const Mat3 & b)
-{
-  Mat3 out {};
-  for (int r = 0; r < 3; ++r) {
-    for (int c = 0; c < 3; ++c) {
-      for (int k = 0; k < 3; ++k) {
-        out[r][c] += a[r][k] * b[k][c];
-      }
-    }
-  }
-  return out;
-}
-
-Vec3 multiply(const Mat3 & a, const Vec3 & v)
-{
-  Vec3 out {{0.0, 0.0, 0.0}};
-  for (int r = 0; r < 3; ++r) {
-    for (int c = 0; c < 3; ++c) {
-      out[r] += a[r][c] * v[c];
-    }
-  }
-  return out;
-}
-
-Vec3 add(const Vec3 & a, const Vec3 & b)
-{
-  return {{a[0] + b[0], a[1] + b[1], a[2] + b[2]}};
-}
-
-geometry_msgs::msg::Quaternion quaternion_from_rotation(const Mat3 & r)
-{
-  geometry_msgs::msg::Quaternion q;
-  const double trace = r[0][0] + r[1][1] + r[2][2];
-
-  if (trace > 0.0) {
-    const double s = std::sqrt(trace + 1.0) * 2.0;
-    q.w = 0.25 * s;
-    q.x = (r[2][1] - r[1][2]) / s;
-    q.y = (r[0][2] - r[2][0]) / s;
-    q.z = (r[1][0] - r[0][1]) / s;
-  } else if (r[0][0] > r[1][1] && r[0][0] > r[2][2]) {
-    const double s = std::sqrt(1.0 + r[0][0] - r[1][1] - r[2][2]) * 2.0;
-    q.w = (r[2][1] - r[1][2]) / s;
-    q.x = 0.25 * s;
-    q.y = (r[0][1] + r[1][0]) / s;
-    q.z = (r[0][2] + r[2][0]) / s;
-  } else if (r[1][1] > r[2][2]) {
-    const double s = std::sqrt(1.0 + r[1][1] - r[0][0] - r[2][2]) * 2.0;
-    q.w = (r[0][2] - r[2][0]) / s;
-    q.x = (r[0][1] + r[1][0]) / s;
-    q.y = 0.25 * s;
-    q.z = (r[1][2] + r[2][1]) / s;
-  } else {
-    const double s = std::sqrt(1.0 + r[2][2] - r[0][0] - r[1][1]) * 2.0;
-    q.w = (r[1][0] - r[0][1]) / s;
-    q.x = (r[0][2] + r[2][0]) / s;
-    q.y = (r[1][2] + r[2][1]) / s;
-    q.z = 0.25 * s;
-  }
-
-  return q;
+  const Vec3 u {{q[0], q[1], q[2]}};
+  const Vec3 uv = cross(u, v);
+  const Vec3 uuv = cross(u, uv);
+  return {{v[0] + 2.0 * (q[3] * uv[0] + uuv[0]),
+      v[1] + 2.0 * (q[3] * uv[1] + uuv[1]),
+      v[2] + 2.0 * (q[3] * uv[2] + uuv[2])}};
 }
 
 PoseState integrate_segment(
@@ -134,41 +54,63 @@ PoseState integrate_segment(
   double ds)
 {
   PoseState next = start;
-  const Vec3 v {{0.0, 0.0, 1.0}};
-  const Mat3 omega_hat = skew(kappa);
-  const Mat3 omega_hat_sq = multiply(omega_hat, omega_hat);
   const double omega_norm = std::sqrt(
     kappa[0] * kappa[0] + kappa[1] * kappa[1] + kappa[2] * kappa[2]);
   const double theta = omega_norm * ds;
-
-  Mat3 rotation_increment = identity_matrix();
-  Mat3 v_matrix = scale(identity_matrix(), ds);
-
-  if (theta < 1e-9) {
-    rotation_increment = add(rotation_increment, scale(omega_hat, ds));
-    rotation_increment = add(rotation_increment, scale(omega_hat_sq, 0.5 * ds * ds));
-
-    v_matrix = add(v_matrix, scale(omega_hat, 0.5 * ds * ds));
-    v_matrix = add(v_matrix, scale(omega_hat_sq, (ds * ds * ds) / 6.0));
+  double half_sine_scale;
+  double half_cosine;
+  double a;
+  double b;
+  if (std::abs(theta) < 1e-4) {
+    const double theta2 = theta * theta;
+    const double theta4 = theta2 * theta2;
+    half_sine_scale = ds * (0.5 - theta2 / 48.0 + theta4 / 3840.0);
+    half_cosine = 1.0 - theta2 / 8.0 + theta4 / 384.0;
+    a = ds * ds * (0.5 - theta2 / 24.0 + theta4 / 720.0);
+    b = ds * ds * ds * (1.0 / 6.0 - theta2 / 120.0 + theta4 / 5040.0);
   } else {
-    rotation_increment = add(rotation_increment, scale(omega_hat, std::sin(theta) / omega_norm));
-    rotation_increment = add(
-      rotation_increment,
-      scale(omega_hat_sq, (1.0 - std::cos(theta)) / (omega_norm * omega_norm)));
-
-    v_matrix = add(
-      v_matrix,
-      scale(omega_hat, (1.0 - std::cos(theta)) / (omega_norm * omega_norm)));
-    v_matrix = add(
-      v_matrix,
-      scale(
-        omega_hat_sq,
-        (theta - std::sin(theta)) / (omega_norm * omega_norm * omega_norm)));
+    const double half_sine = std::sin(0.5 * theta);
+    const double half_cosine_value = std::cos(0.5 * theta);
+    half_sine_scale = half_sine / omega_norm;
+    half_cosine = half_cosine_value;
+    a = 2.0 * half_sine * half_sine / (omega_norm * omega_norm);
+    b = (theta - 2.0 * half_sine * half_cosine_value) /
+      (omega_norm * omega_norm * omega_norm);
   }
 
-  next.rotation = multiply(start.rotation, rotation_increment);
-  next.position = add(start.position, multiply(start.rotation, multiply(v_matrix, v)));
+  const Quaternion delta_rotation {{
+      kappa[0] * half_sine_scale,
+      kappa[1] * half_sine_scale,
+      kappa[2] * half_sine_scale,
+      half_cosine,
+    }};
+  const Vec3 omega_cross_e3 {{kappa[1], -kappa[0], 0.0}};
+  const Vec3 omega_cross_omega_cross_e3 {{
+      kappa[0] * kappa[2], kappa[1] * kappa[2],
+      -(kappa[0] * kappa[0] + kappa[1] * kappa[1])}};
+  const Vec3 local_translation {{
+      b * omega_cross_omega_cross_e3[0] + a * omega_cross_e3[0],
+      b * omega_cross_omega_cross_e3[1] + a * omega_cross_e3[1],
+      ds + b * omega_cross_omega_cross_e3[2],
+    }};
+  const Vec3 world_translation = rotate(start.rotation, local_translation);
+  next.position = {{
+      start.position[0] + world_translation[0],
+      start.position[1] + world_translation[1],
+      start.position[2] + world_translation[2],
+    }};
+  next.rotation = multiply(start.rotation, delta_rotation);
   return next;
+}
+
+geometry_msgs::msg::Quaternion to_message(const Quaternion & rotation)
+{
+  geometry_msgs::msg::Quaternion result;
+  result.x = rotation[0];
+  result.y = rotation[1];
+  result.z = rotation[2];
+  result.w = rotation[3];
+  return result;
 }
 
 }  // namespace
@@ -210,7 +152,7 @@ geometry_msgs::msg::PoseArray reconstruct_shape(
   double current_s = 0.0;
   pose_array.poses.reserve(arc_lengths.size() + 1U);
   geometry_msgs::msg::Pose base_pose;
-  base_pose.orientation.w = 1.0;
+  base_pose.orientation = to_message(state.rotation);
   pose_array.poses.push_back(base_pose);
 
   for (std::size_t i = 0; i < arc_lengths.size(); ++i) {
@@ -223,7 +165,7 @@ geometry_msgs::msg::PoseArray reconstruct_shape(
     pose.position.x = state.position[0];
     pose.position.y = state.position[1];
     pose.position.z = state.position[2];
-    pose.orientation = quaternion_from_rotation(state.rotation);
+    pose.orientation = to_message(state.rotation);
     pose_array.poses.push_back(pose);
     current_s = target_s;
   }

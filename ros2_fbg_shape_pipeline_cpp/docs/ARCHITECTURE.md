@@ -50,7 +50,8 @@ g initially equals identity; r[0]=(0,0,0) at the physical needle base.
 For each segment, g = g * exp(ds * [skew(kappa[i]), e3; 0,0]).
 This preserves the MATLAB SE(3) update, with explicitly constructed segment
 boundaries replacing measurement positions. The closed-form exponential uses
-a small-angle series to avoid division by zero. Output is N+1 boundary points:
+quaternion composition and its matching closed-form translation; a small-angle
+series avoids cancellation near zero. Output is N+1 boundary points:
 19 for this sensor, including base and tip. No curvature interpolation,
 1 mm sampling, or integration substeps are used.
 
