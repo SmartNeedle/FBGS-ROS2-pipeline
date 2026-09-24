@@ -175,7 +175,7 @@ class PipelineTests(unittest.TestCase):
                 log.flush()
                 log.seek(0)
                 self.fail(
-                    "OpenIGTLink server did not start listening. Launch output:\\n"
+                    "OpenIGTLink server did not start listening. Launch output:\n"
                     + log.read()
                 )
             connection.settimeout(0.1)
