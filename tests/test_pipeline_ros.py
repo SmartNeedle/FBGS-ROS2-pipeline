@@ -22,6 +22,19 @@ except ImportError:
     HAS_ROS = False
 
 
+def _test_environment(repo_root):
+    env = os.environ.copy()
+    library_dirs = [
+        repo_root / "OpenIGTLink-build" / "bin",
+        repo_root / "OpenIGTLink-build" / "lib",
+    ]
+    existing = env.get("LD_LIBRARY_PATH")
+    env["LD_LIBRARY_PATH"] = os.pathsep.join(
+        [str(path) for path in library_dirs] + ([existing] if existing else [])
+    )
+    return env
+
+
 class Source:
     def __init__(self, straight=False):
         self.listener = socket.socket()
@@ -45,6 +58,7 @@ class Source:
                 client.settimeout(0.2)
                 client.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
                 index = 0
+                next_send = time.monotonic()
                 while not self.stop.is_set():
                     packet = bytearray(simulator.make_packet(index, 20))
                     offset = 5
@@ -61,7 +75,8 @@ class Source:
                     except OSError:
                         break
                     index += 1
-                    self.stop.wait(0.01)
+                    next_send += 0.01
+                    self.stop.wait(max(0.0, next_send - time.monotonic()))
 
     def close(self):
         self.stop.set()
@@ -90,6 +105,7 @@ class PipelineTests(unittest.TestCase):
              "--tcp-port", str(source.port), "--bridge-port", str(igtl_port),
              "--full-frame-input"],
             cwd=repo_root, stdout=log, stderr=subprocess.STDOUT, start_new_session=True,
+            env=_test_environment(repo_root),
         )
         try:
             deadline = time.monotonic() + 20
@@ -119,6 +135,7 @@ class PipelineTests(unittest.TestCase):
         with socket.socket() as reservation:
             reservation.bind(("127.0.0.1", 0))
             igtl_port = reservation.getsockname()[1]
+        repo_root = Path(__file__).resolve().parents[1]
         rclpy.init()
         node = Node("audit_pipeline_observer")
         shapes = []
@@ -132,6 +149,7 @@ class PipelineTests(unittest.TestCase):
             ["ros2", "launch", "ros2_smartneedle_adapter", "full_pipeline.launch.py",
              f"tcp_port:={sources[0].port}", f"bridge_port:={igtl_port}"],
             stdout=log, stderr=subprocess.STDOUT, start_new_session=True,
+            env=_test_environment(repo_root),
         )
 
         def pump(seconds):
@@ -145,7 +163,21 @@ class PipelineTests(unittest.TestCase):
                 pump(0.1)
             self.assertTrue(shapes, "No reconstructed shapes")
             self.assertEqual(len(shapes[-1].poses), 19)
-            connection = socket.create_connection(("127.0.0.1", igtl_port), timeout=5)
+            connect_deadline = time.monotonic() + 20
+            while connection is None and process.poll() is None and time.monotonic() < connect_deadline:
+                try:
+                    connection = socket.create_connection(
+                        ("127.0.0.1", igtl_port), timeout=0.2
+                    )
+                except OSError:
+                    time.sleep(0.1)
+            if connection is None:
+                log.flush()
+                log.seek(0)
+                self.fail(
+                    "OpenIGTLink server did not start listening. Launch output:\\n"
+                    + log.read()
+                )
             connection.settimeout(0.1)
 
             def exact(count):
