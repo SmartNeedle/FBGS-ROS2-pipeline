@@ -4,17 +4,14 @@ import runpy
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
-from launch.conditions import UnlessCondition
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
 
 
-
 def generate_launch_description():
     tcp_host = LaunchConfiguration("tcp_host")
     tcp_port = LaunchConfiguration("tcp_port")
-    fused_shape = LaunchConfiguration("fused_shape")
     compact_topic = LaunchConfiguration("compact_topic")
     compact_enabled = LaunchConfiguration("compact_enabled")
     sensor_input_topic = LaunchConfiguration("sensor_input_topic")
@@ -31,20 +28,16 @@ def generate_launch_description():
         print(f"[fbg_shape_pipeline.launch] Override keys: {sorted(needle_overrides.keys())}")
 
     curvature_overrides = {}
-    shape_overrides = {}
-    for key in ("first_fbg_index", "sensor_arc_lengths_mm", "curvature_scale", "orientation_sign", "orientation_offset_rad"):
+    for key in ("first_fbg_index", "sensor_arc_lengths_mm", "orientation_sign", "orientation_offset_rad"):
         if key in needle_overrides:
             curvature_overrides[key] = needle_overrides[key]
     if "needle_length_mm" in needle_overrides:
-        shape_overrides["needle_length_mm"] = needle_overrides["needle_length_mm"]
         curvature_overrides["needle_length_mm"] = needle_overrides["needle_length_mm"]
-    curvature_overrides["publish_shape"] = ParameterValue(fused_shape, value_type=bool)
     curvature_overrides["input_topic"] = sensor_input_topic
 
     return LaunchDescription([
         DeclareLaunchArgument("tcp_host", default_value="127.0.0.1"),
         DeclareLaunchArgument("tcp_port", default_value="50012"),
-        DeclareLaunchArgument("fused_shape", default_value="true"),
         DeclareLaunchArgument("compact_topic", default_value="/needle/fbg_sensor_frame"),
         DeclareLaunchArgument("compact_enabled", default_value="true"),
         DeclareLaunchArgument("sensor_input_topic", default_value="/needle/fbg_sensor_frame"),
@@ -63,13 +56,5 @@ def generate_launch_description():
             name="curvature_processor_node",
             output="screen",
             parameters=[config_file, curvature_overrides],
-        ),
-        Node(
-            package="fbg_shape_pipeline_cpp",
-            executable="shape_publisher_node",
-            name="shape_publisher_node",
-            condition=UnlessCondition(fused_shape),
-            output="screen",
-            parameters=[config_file, shape_overrides],
         ),
     ])

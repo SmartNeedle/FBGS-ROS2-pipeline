@@ -1,6 +1,6 @@
 # ROS 2 FBG Shape Pipeline
 
-The three C++ nodes implement TCP acquisition, calibrated angle processing, and
+The C++ package implements TCP acquisition, calibrated angle processing, and
 piecewise-constant SE(3) reconstruction. See [architecture](docs/ARCHITECTURE.md)
 and the [canonical full-stack protocol](../docs/SLICER_ROS2_OPENIGTLINK_PROTOCOL.md).
 
@@ -13,13 +13,16 @@ Rebuild after changing installed code or use the source configuration override.
 
 Lengths labelled mm or without a unit are millimeters. Explicit legacy m keys
 are converted to millimeters by the calibration loader. Missing, duplicate,
-nonfinite, or inconsistent calibration values fail at launch.
-ROS parameters themselves use only needle_length_mm and sensor_arc_lengths_mm.
+nonfinite, or inconsistent calibration values fail at launch. ROS length
+parameters always use explicit millimeter names; meter aliases are accepted only
+in legacy text calibration files.
 
 First FBG is 1-based; selected positions already correspond to the selected
-measurements. Curvature scales must all equal one. Angle transformation is
+measurements. Curvature is used directly in 1/mm. Angle transformation is
 sign * incoming_angle + offset_rad, wrapped to [-pi, pi].
 The current signs are all -1 and offsets all zero.
+Older calibration files may retain a unity-only `Curvature scale` row; it is
+validated for compatibility and ignored. New files should omit it.
 
 ## Optional core-only operation
 

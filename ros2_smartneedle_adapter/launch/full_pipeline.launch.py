@@ -16,7 +16,6 @@ def generate_launch_description():
         launch_arguments={
             "tcp_host": LaunchConfiguration("tcp_host"),
             "tcp_port": LaunchConfiguration("tcp_port"),
-            "fused_shape": LaunchConfiguration("fused_shape"),
             "compact_topic": LaunchConfiguration("compact_topic"),
             "compact_enabled": LaunchConfiguration("compact_enabled"),
             "sensor_input_topic": LaunchConfiguration("sensor_input_topic"),
@@ -37,7 +36,6 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument("tcp_host", default_value="127.0.0.1"),
         DeclareLaunchArgument("tcp_port", default_value="50012"),
-        DeclareLaunchArgument("fused_shape", default_value="true"),
         DeclareLaunchArgument("compact_topic", default_value="/needle/fbg_sensor_frame"),
         DeclareLaunchArgument("compact_enabled", default_value="true"),
         DeclareLaunchArgument("sensor_input_topic", default_value="/needle/fbg_sensor_frame"),

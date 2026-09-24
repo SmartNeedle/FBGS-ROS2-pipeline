@@ -24,14 +24,6 @@ With the default compact input, the TCP counter counts complete raw messages
 after both compact and full publication; the processor counts compact messages.
 The two publications come from the same parsed frame and share its timestamp.
 
-For the older separate-node path, launch with --separate-shape and enable
-diagnostics on both nodes:
-
-```bash
-ros2 param set /curvature_processor_node timing_diagnostics true
-ros2 param set /shape_publisher_node timing_diagnostics true
-```
-
 Durations use a monotonic clock. Fused shape timing covers reconstruction and
 the ROS shape publish call; it does not measure subscriber delivery,
 OpenIGTLink transmission, or Slicer rendering. Callback intervals also include

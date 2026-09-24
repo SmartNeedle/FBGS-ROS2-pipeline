@@ -27,17 +27,24 @@ class ContractTests(unittest.TestCase):
         self.assertEqual(len(config["sensor_arc_lengths_mm"]), 18)
         self.assertAlmostEqual(config["needle_length_mm"], 196.391633064447)
         self.assertEqual(config["orientation_sign"], [-1.0] * 18)
-        self.assertEqual(config["curvature_scale"], [1.0] * 18)
+        self.assertNotIn("curvature_scale", config)
 
     def test_units_and_invalid_calibration(self):
         source = (CONFIG / "needle_config.txt").read_text()
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "sensor.txt"
+            legacy = source.replace(
+                "Orientation sign:",
+                "Curvature scale: " + " ".join(["1"] * 18) + "\nOrientation sign:",
+                1,
+            )
+            path.write_text(legacy)
+            self.assertNotIn("curvature_scale", calibration.load_needle_config(path))
             path.write_text(source.replace("Needle length (mm): 196.391633064447", "Needle length (m): 0.196391633064447"))
             self.assertAlmostEqual(calibration.load_needle_config(path)["needle_length_mm"], 196.391633064447)
             for invalid in (
                 source.replace("First FBG: 3", "First FBG: 2.5"),
-                source.replace("Curvature scale: 1", "Curvature scale: 2", 1),
+                source.replace("Orientation sign:", "Curvature scale: " + " ".join(["1"] * 17 + ["2"]) + "\nOrientation sign:", 1),
                 source.replace("11.592254970012", "nan", 1),
                 source.replace("21.592254970012", "1", 1),
             ):

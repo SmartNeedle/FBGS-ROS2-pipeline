@@ -1,4 +1,4 @@
-# Second Audit (2026-09-21)
+# Pipeline Audit (2026-09-24)
 
 Scope: all project-owned tracked source, configuration, launch/build scripts,
 messages, documentation, and tools; top-level generated/backup directories;
@@ -84,3 +84,33 @@ end-to-end straight-needle expectation have been updated for this model.
   unspecified. Packet source timestamps are preserved without guessing units.
 - External smartneedle_interface contains a TODO license declaration. Confirm
   upstream distribution permissions with collaborators.
+
+## Follow-up cleanup (2026-09-24)
+
+- Removed the unused, separate shape-publisher node and its launch option. Shape
+  reconstruction now has one supported route: the curvature callback publishes
+  CurvatureFrame and PoseArray from the same input frame.
+- Removed the curvature_scale ROS parameter and processing configuration. Raw
+  interrogator curvature is used directly in 1/mm; the parser only accepts an
+  optional legacy scale row when every value is 1, then ignores it.
+- Removed duplicate sensor calibration values from pipeline.yaml and C++
+  fallbacks. The selected sensor calibration file is the only source of sensor
+  positions, first FBG index, angle convention, and needle length. Missing
+  calibration now fails at startup rather than silently selecting a placeholder.
+- Reject zero or negative first_fbg_index and averaging windows before converting
+  to unsigned values, preventing invalid indices and accidental huge windows.
+- Confirmed the 20-value simulator frame has the observed 15,767-byte size and
+  field dimensions; synthetic content and constant-size timing remain an
+  approximation of one capture, not a model of live interrogator jitter.
+- Confirmed the three direct external submodules are clean at the pinned commits.
+  Recursive status inspection reaches the two URL-less legacy gitlinks inside
+  ws_smartneedle and stops as documented; those paths are not used by this build.
+
+Behavior impact: the active calibrated launch route keeps the same curvature,
+angle, reconstruction, and output calculations. Directly launching the C++ node
+without its calibration file now fails safely. The old --separate-shape option
+and shape_publisher_node executable were removed; users of that unsupported
+comparison route must use the fused pipeline. Rebuild and rerun the complete
+synthetic ROS/IGTL test suite after these launch/build changes. No new physical
+sensor claim is made; interrogator timing and known-bend validation remain
+pending access to hardware.

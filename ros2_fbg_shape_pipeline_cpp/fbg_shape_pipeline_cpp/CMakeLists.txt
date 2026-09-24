@@ -12,7 +12,6 @@ find_package(ament_cmake REQUIRED)
 find_package(fbg_shape_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(std_msgs REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system)
 
 include_directories(include)
@@ -31,7 +30,6 @@ ament_target_dependencies(fbg_shape_pipeline_core
   fbg_shape_msgs
   geometry_msgs
   rclcpp
-  std_msgs
 )
 
 add_executable(tcp_receiver_node src/tcp_receiver_node.cpp)
@@ -49,20 +47,11 @@ ament_target_dependencies(curvature_processor_node
   rclcpp
 )
 
-add_executable(shape_publisher_node src/shape_publisher_node.cpp)
-target_link_libraries(shape_publisher_node fbg_shape_pipeline_core)
-ament_target_dependencies(shape_publisher_node
-  fbg_shape_msgs
-  geometry_msgs
-  rclcpp
-)
-
 install(
   TARGETS
     fbg_shape_pipeline_core
     tcp_receiver_node
     curvature_processor_node
-    shape_publisher_node
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}

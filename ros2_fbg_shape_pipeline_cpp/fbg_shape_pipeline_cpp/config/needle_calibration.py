@@ -41,7 +41,7 @@ def load_needle_config(path):
                 result[canonical] = values[0]
             else:
                 result[canonical] = values
-    missing = set(aliases) - set(result)
+    missing = set(aliases) - {"curvature_scale"} - set(result)
     if missing:
         raise ValueError(f"Missing calibration keys: {sorted(missing)}")
     first = result["first_fbg_index"]
@@ -51,13 +51,16 @@ def load_needle_config(path):
     positions = result["sensor_arc_lengths_mm"]
     if positions[0] < 0 or any(b <= a for a, b in zip(positions, positions[1:])):
         raise ValueError("Sensor positions must be nonnegative and strictly increasing")
-    if result["needle_length_mm"] < positions[-1]:
-        raise ValueError("Needle length must reach the last sensor")
-    for key in ("curvature_scale", "orientation_sign", "orientation_offset_rad"):
+    if result["needle_length_mm"] <= 0 or result["needle_length_mm"] < positions[-1]:
+        raise ValueError("Needle length must be positive and reach the last sensor")
+    legacy_scale = result.pop("curvature_scale", None)
+    if legacy_scale is not None and (
+        len(legacy_scale) != len(positions) or any(value != 1.0 for value in legacy_scale)
+    ):
+        raise ValueError("Legacy curvature scales are accepted only when all values equal 1")
+    for key in ("orientation_sign", "orientation_offset_rad"):
         if len(result[key]) != len(positions):
             raise ValueError(f"{key} length must match sensor positions")
-    if any(v != 1.0 for v in result["curvature_scale"]):
-        raise ValueError("Curvature scales must all be 1; interrogator values are used directly")
     if any(v not in (-1.0, 1.0) for v in result["orientation_sign"]):
         raise ValueError("Orientation signs must be +1 or -1")
     return result

@@ -2,8 +2,8 @@
 
 Real interrogator data and simulated TCP data use the same receiver, calibration,
 curvature processing, SE(3) reconstruction, and OpenIGTLink output.
-The default C++ launch reconstructs shape in the curvature callback to avoid an
-extra ROS message handoff; --separate-shape restores the previous layout.
+The curvature callback publishes curvature and reconstructed shape together,
+avoiding an extra ROS message handoff.
 The receiver publishes a compact sensor-only frame for this processing path
 while retaining complete raw frames on /needle/fbg_frame. Use
 --full-frame-input to compare against the original raw-frame handoff.
@@ -31,7 +31,8 @@ pull and initialize dependencies on the Linux test machine.
 
 - Curvature: 1/mm. Angles: radians. Coordinates and lengths: millimeters.
 - Current calibration: 20 incoming values, First FBG 3, 18 selected measurements.
-- Curvature scales must be unity; angle signs and offsets come from calibration.
+- Curvature is used directly from the interrogator in 1/mm; sensor angle signs
+  and offsets come from calibration.
 - Reconstruction spans the physical base to the calibrated tip, using one SE(3)
   exponential per constant-curvature segment bounded by measurement midpoints.
 - No curvature interpolation or uniform output resampling.

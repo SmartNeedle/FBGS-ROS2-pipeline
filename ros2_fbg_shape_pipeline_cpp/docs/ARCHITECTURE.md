@@ -71,9 +71,8 @@ received points; it does not alter the ROS reconstruction or transmitted points.
 Internal ROS queues have depth one. By default the curvature processor
 reconstructs and publishes the shape in the same FbgFrame callback that
 publishes CurvatureFrame. This removes the curvature-to-shape DDS handoff while
-keeping both topic contracts. The separate shape node remains available through
-the --separate-shape launcher option for comparison. DDS may replace queued
-raw frames if the curvature callback cannot keep pace with input.
+DDS may replace queued raw frames if the curvature callback cannot keep pace
+with input.
 The simulator uses monotonic deadlines targeting 100 Hz. Curvature magnitude
 is 0.002..0.003 1/mm (2..3 1/m); temperature is a Celsius placeholder and angle
 is radians. Target publishing rates are not hard real-time guarantees.
