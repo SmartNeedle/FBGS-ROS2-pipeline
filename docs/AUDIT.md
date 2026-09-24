@@ -119,9 +119,38 @@ On this Windows audit host, all 4 portable tests passed; 3 ROS-specific tests
 were skipped because ROS 2 is unavailable here. Python syntax and whitespace
 checks passed. The three direct external submodules have no tracked changes.
 
-Retest scope: after pulling this commit on the Linux test computer, perform a
-full rebuild and the documented synthetic end-to-end ROS/IGTL/Slicer check,
-because the launch graph, installed node set, and calibration contract changed.
-This is required before further hardware comparison. Real interrogator rate,
-packet timing, and known-bend calibration validation still require hardware and
-remain pending; the simulator results do not substitute for those checks.
+Retest scope: the required Linux rebuild and synthetic ROS/IGTL/Slicer
+retest were completed on 2026-09-24; see the latest verification below. Physical
+interrogator rate, packet timing, source switching against the real sender, and
+known-bend calibration validation remain pending hardware checks.
+
+
+## Latest Linux simulation verification (2026-09-24)
+
+After pulling the audit update, the Linux ROS Humble build completed all four
+packages. It emitted non-fatal unused-CMake-argument notices and the external
+bridge's ROSIDL deprecation notices; there were no build failures. The subsequent
+test-only update was pulled without rebuilding.
+
+- The full Python suite passed: 7 tests, 0 failures/errors/skips. Its end-to-end
+  synthetic TCP-to-OpenIGTLink check measured 100.0 Hz reconstructed shapes and
+  100.0 Hz POINT output.
+- Colcon passed: 12 tests, 0 errors, 0 failures, 0 skipped.
+- Manual simulated operation through ROS, the OpenIGTLink bridge, and Slicer
+  succeeded. Raw frames, curvature, reconstructed shape, and IGTL POINT topics
+  each measured approximately 100 Hz.
+- Stopping the simulator caused stale-input publication pause; restarting it
+  resumed output and Slicer motion without restarting ROS or Slicer.
+- The latency probe reported approximately 100.1 Hz curvature and shape rates.
+  ROS receipt-to-shape-subscriber latency settled at 5.15 ms median and 7.17 ms
+  p95, with an 88.22 ms maximum outlier. This metric excludes sensor acquisition
+  and Slicer rendering.
+- GitHub Actions passed the Linux Humble workflow on test commit bde8256:
+  https://github.com/jfcoeur/FBGS-ROS2-pipeline/actions/runs/36063286446
+- The Slicer dependency checkout showed only a modified tracked Python bytecode
+  cache after module use. That one cache file was restored; its submodule status
+  is now clean. No collaborator source files were changed.
+
+The simulated path is verified for integration and nominal 100 Hz operation;
+these results do not establish physical interrogator timing or calibration
+accuracy. Complete the hardware checks above when the sensor is available.
