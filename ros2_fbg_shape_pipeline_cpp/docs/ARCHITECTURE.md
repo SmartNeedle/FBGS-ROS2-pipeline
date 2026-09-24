@@ -77,6 +77,9 @@ raw frames if the curvature callback cannot keep pace with input.
 The simulator uses monotonic deadlines targeting 100 Hz. Curvature magnitude
 is 0.002..0.003 1/mm (2..3 1/m); temperature is a Celsius placeholder and angle
 is radians. Target publishing rates are not hard real-time guarantees.
+Its synthetic 20-value packet matches one observed ShapeCore frame's 15,767-byte
+wire size and array dimensions. This does not emulate network jitter or packet
+size variation.
 
 The adapter samples the latest shape at 100 Hz. Repeated outputs preserve the
 same input sequence number and receipt timestamp. At 0.5 s without a valid

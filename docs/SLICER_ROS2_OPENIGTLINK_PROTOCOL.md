@@ -66,8 +66,15 @@ python3 ros2_fbg_shape_pipeline_cpp/tools/mock_fbg_stream_server.py \
 
 The simulator reads the current needle_config.txt and derives 20 incoming
 values. To select another sensor, pass --needle-config PATH and use the same
-path as FBG_NEEDLE_CONFIG_FILE in the pipeline terminal. Temperature/spectra/
-packet shape are placeholders; only curvature and angle drive reconstruction.
+path as FBG_NEEDLE_CONFIG_FILE in the pipeline terminal. Temperature, spectra,
+and packet shape contain synthetic values; only curvature and angle drive
+reconstruction. The synthetic frame matches the field order and dimensions of
+one locally inspected ShapeCore capture: 20 sensor values, a 192x3 packet-shape
+array, and four spectra cores with 512 spectrum samples and 20 peaks each.
+At 20 sensor values this is 15,767 bytes per TCP frame including the length
+prefix. No captured packet contents are included in the repository. This
+matches one observed packet size, not the real stream's jitter, size variation,
+or error frequency; compare rates with live interrogator diagnostics too.
 
 Terminal 2:
 

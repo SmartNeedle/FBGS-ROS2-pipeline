@@ -8,6 +8,13 @@ import struct
 import time
 
 
+# Dimensions from a locally inspected ShapeCore frame; no captured data is stored here.
+SHAPE_ROWS = 192
+SPECTRUM_SAMPLES = 512
+PEAKS_PER_CORE = 20
+SPECTRA_CORES = 4
+
+
 def pack_field(field_id: int, payload: bytes) -> bytes:
     field_length = 2 + len(payload)
     return struct.pack("<IH", field_length, field_id) + payload
@@ -35,7 +42,7 @@ def make_packet(sample_index: int, active_areas: int, rate_hz: float = 100.0) ->
         angle.append(math.atan2(curvature_y[i], curvature_x[i]))
 
     shape_points = []
-    for step in range(20):
+    for step in range(SHAPE_ROWS):
         z = step * 0.001
         x = 0.001 * math.sin(sample_index * 0.02) * step
         y = 0.001 * math.cos(sample_index * 0.02) * step
@@ -46,16 +53,16 @@ def make_packet(sample_index: int, active_areas: int, rate_hz: float = 100.0) ->
     payload += pack_field(1, struct.pack("<Q", sample_index))
     payload += pack_field(2, struct.pack("<d", timestamp))
     payload += pack_field(
-        3,
-        struct.pack("<I", len(curvature)) + struct.pack(f"<{len(curvature)}f", *curvature),
-    )
-    payload += pack_field(
         4,
         struct.pack("<I", len(angle)) + struct.pack(f"<{len(angle)}f", *angle),
     )
     payload += pack_field(
+        3,
+        struct.pack("<I", len(curvature)) + struct.pack(f"<{len(curvature)}f", *curvature),
+    )
+    payload += pack_field(
         5,
-        struct.pack("<II", 3, len(shape_points) // 3) +
+        struct.pack("<II", SHAPE_ROWS, 3) +
         struct.pack(f"<{len(shape_points)}f", *shape_points),
     )
     payload += pack_field(
@@ -64,11 +71,11 @@ def make_packet(sample_index: int, active_areas: int, rate_hz: float = 100.0) ->
     )
 
     spectra_payload = b""
-    for channel in range(min(active_areas, 4)):
-        spectrum_wl = [1550000 + channel * 10 + j for j in range(8)]
-        spectrum_power = [1000 + j for j in range(8)]
-        peaks_wl = [1550000 + channel * 10 + j * 20 for j in range(2)]
-        peaks_power = [2000 + j for j in range(2)]
+    for channel in range(SPECTRA_CORES):
+        spectrum_wl = [1550000 + channel * 10 + j for j in range(SPECTRUM_SAMPLES)]
+        spectrum_power = [1000 + j for j in range(SPECTRUM_SAMPLES)]
+        peaks_wl = [1550000 + channel * 10 + j * 20 for j in range(PEAKS_PER_CORE)]
+        peaks_power = [2000 + j for j in range(PEAKS_PER_CORE)]
 
         core_payload = struct.pack("<B", channel)
         core_payload += pack_field(0, struct.pack("<d", timestamp))

@@ -48,18 +48,23 @@ class ContractTests(unittest.TestCase):
     def test_simulator_packet_and_curvature_bound(self):
         for index in range(300):
             packet = simulator.make_packet(index, 20)
+            self.assertEqual(len(packet), 15767)
             self.assertEqual(struct.unpack_from("<I", packet)[0], len(packet) - 4)
             self.assertEqual(packet[4], 0)
             offset = 5
             fields = {}
+            field_order = []
             while offset < len(packet):
                 size, field_id = struct.unpack_from("<IH", packet, offset)
                 end = offset + 4 + size
                 self.assertLessEqual(end, len(packet))
                 fields[field_id] = packet[offset + 6:end]
+                field_order.append(field_id)
                 offset = end
             self.assertEqual(offset, len(packet))
             self.assertEqual(set(fields), set(range(8)))
+            self.assertEqual(field_order, [0, 1, 2, 4, 3, 5, 6, 7])
+            self.assertEqual(struct.unpack_from("<II", fields[5]), (192, 3))
             spectra = fields[7]
             offset = 0
             channels = []
@@ -69,12 +74,16 @@ class ContractTests(unittest.TestCase):
                 self.assertLessEqual(end, len(spectra))
                 channels.append(spectra[offset + 4])
                 offset += 5
+                counts = {}
                 while offset < end:
-                    sub_length = struct.unpack_from("<I", spectra, offset)[0]
+                    sub_length, sub_id = struct.unpack_from("<IH", spectra, offset)
                     self.assertGreaterEqual(sub_length, 2)
+                    if sub_id in (3, 4, 5, 6):
+                        counts[sub_id] = struct.unpack_from("<I", spectra, offset + 6)[0]
                     offset += 4 + sub_length
                     self.assertLessEqual(offset, end)
                 self.assertEqual(offset, end)
+                self.assertEqual(counts, {3: 512, 4: 512, 5: 20, 6: 20})
             self.assertEqual(channels, [0, 1, 2, 3])
             for field_id in (3, 4, 6):
                 self.assertEqual(struct.unpack_from("<I", fields[field_id])[0], 20)
@@ -89,7 +98,17 @@ class ContractTests(unittest.TestCase):
         # Ignore timestamps and compare the curvature/angle fields at t=1 second.
         a = simulator.make_packet(100, 20, 100)
         b = simulator.make_packet(50, 20, 50)
-        self.assertEqual(a[41:213], b[41:213])
+        def sensor_fields(packet):
+            offset = 5
+            fields = {}
+            while offset < len(packet):
+                size, field_id = struct.unpack_from("<IH", packet, offset)
+                if field_id in (3, 4):
+                    fields[field_id] = packet[offset + 6:offset + 4 + size]
+                offset += 4 + size
+            return fields
+
+        self.assertEqual(sensor_fields(a), sensor_fields(b))
 
 
 if __name__ == "__main__":
