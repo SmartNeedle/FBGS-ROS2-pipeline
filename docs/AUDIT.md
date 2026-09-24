@@ -109,8 +109,19 @@ end-to-end straight-needle expectation have been updated for this model.
 Behavior impact: the active calibrated launch route keeps the same curvature,
 angle, reconstruction, and output calculations. Directly launching the C++ node
 without its calibration file now fails safely. The old --separate-shape option
-and shape_publisher_node executable were removed; users of that unsupported
-comparison route must use the fused pipeline. Rebuild and rerun the complete
-synthetic ROS/IGTL test suite after these launch/build changes. No new physical
-sensor claim is made; interrogator timing and known-bend validation remain
-pending access to hardware.
+and shape_publisher_node executable were removed; users of that comparison route
+must use the fused pipeline.
+
+Verification: commit 1f066b5 passed the GitHub Ubuntu 22.04 / ROS Humble build,
+all 7 Python tests, and all 12 colcon tests (0 errors, 0 failures, 0 skipped):
+https://github.com/jfcoeur/FBGS-ROS2-pipeline/actions/runs/36055843077
+On this Windows audit host, all 4 portable tests passed; 3 ROS-specific tests
+were skipped because ROS 2 is unavailable here. Python syntax and whitespace
+checks passed. The three direct external submodules have no tracked changes.
+
+Retest scope: after pulling this commit on the Linux test computer, perform a
+full rebuild and the documented synthetic end-to-end ROS/IGTL/Slicer check,
+because the launch graph, installed node set, and calibration contract changed.
+This is required before further hardware comparison. Real interrogator rate,
+packet timing, and known-bend calibration validation still require hardware and
+remain pending; the simulator results do not substitute for those checks.
