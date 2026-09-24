@@ -16,6 +16,7 @@ def generate_launch_description():
     tcp_port = LaunchConfiguration("tcp_port")
     fused_shape = LaunchConfiguration("fused_shape")
     compact_topic = LaunchConfiguration("compact_topic")
+    compact_enabled = LaunchConfiguration("compact_enabled")
     sensor_input_topic = LaunchConfiguration("sensor_input_topic")
     package_share = get_package_share_directory("fbg_shape_pipeline_cpp")
     config_file = os.path.join(package_share, "config", "pipeline.yaml")
@@ -45,6 +46,7 @@ def generate_launch_description():
         DeclareLaunchArgument("tcp_port", default_value="50012"),
         DeclareLaunchArgument("fused_shape", default_value="true"),
         DeclareLaunchArgument("compact_topic", default_value="/needle/fbg_sensor_frame"),
+        DeclareLaunchArgument("compact_enabled", default_value="true"),
         DeclareLaunchArgument("sensor_input_topic", default_value="/needle/fbg_sensor_frame"),
         Node(
             package="fbg_shape_pipeline_cpp",
@@ -52,7 +54,8 @@ def generate_launch_description():
             name="tcp_receiver_node",
             output="screen",
             parameters=[config_file, {"tcp_host": tcp_host, "tcp_port": tcp_port,
-                                      "compact_output_topic": ParameterValue(compact_topic, value_type=str)}],
+                                      "compact_output_topic": ParameterValue(compact_topic, value_type=str),
+                                      "publish_compact": ParameterValue(compact_enabled, value_type=bool)}],
         ),
         Node(
             package="fbg_shape_pipeline_cpp",

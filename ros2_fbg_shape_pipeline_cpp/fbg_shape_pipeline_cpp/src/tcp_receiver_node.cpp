@@ -30,12 +30,13 @@ public:
     const auto port = static_cast<std::uint16_t>(port_value);
     const auto topic_name = declare_parameter<std::string>("output_topic", "/needle/fbg_frame");
     const auto compact_topic_name = declare_parameter<std::string>("compact_output_topic", "");
+    const auto publish_compact = declare_parameter<bool>("publish_compact", true);
     declare_parameter<bool>("timing_diagnostics", false);
     diagnostics_timer_ = create_wall_timer(
       std::chrono::seconds(2), std::bind(&TcpReceiverNode::report_counts, this));
 
     publisher_ = create_publisher<fbg_shape_msgs::msg::FbgFrame>(topic_name, rclcpp::QoS(1));
-    if (!compact_topic_name.empty()) {
+    if (publish_compact && !compact_topic_name.empty()) {
       compact_publisher_ = create_publisher<fbg_shape_msgs::msg::FbgFrame>(
         compact_topic_name, rclcpp::QoS(1));
     }

@@ -29,6 +29,7 @@ BRIDGE_IP="127.0.0.1"
 BRIDGE_MODE="server"
 FUSED_SHAPE="true"
 COMPACT_TOPIC="/needle/fbg_sensor_frame"
+COMPACT_ENABLED="true"
 SENSOR_INPUT_TOPIC="/needle/fbg_sensor_frame"
 
 while [[ $# -gt 0 ]]; do
@@ -68,7 +69,7 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     --full-frame-input)
-      COMPACT_TOPIC=""
+      COMPACT_ENABLED="false"
       SENSOR_INPUT_TOPIC="/needle/fbg_frame"
       shift
       ;;
@@ -113,4 +114,5 @@ ros2 launch ros2_smartneedle_adapter full_pipeline.launch.py \
   bridge_port:="$BRIDGE_PORT" \
   fused_shape:="$FUSED_SHAPE" \
   compact_topic:="$COMPACT_TOPIC" \
+  compact_enabled:="$COMPACT_ENABLED" \
   sensor_input_topic:="$SENSOR_INPUT_TOPIC"

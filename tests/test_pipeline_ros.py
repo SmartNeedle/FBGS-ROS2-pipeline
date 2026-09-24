@@ -71,6 +71,49 @@ class Source:
 
 @unittest.skipUnless(HAS_ROS and os.name == "posix", "requires Linux ROS 2 workspace")
 class PipelineTests(unittest.TestCase):
+    def test_full_frame_input_launcher(self):
+        source = Source()
+        with socket.socket() as reservation:
+            reservation.bind(("127.0.0.1", 0))
+            igtl_port = reservation.getsockname()[1]
+        repo_root = Path(__file__).resolve().parents[1]
+        install_setup = (Path.home() / ".cache" / "fbg_colcon" /
+                         f"{repo_root.name}_slicer" / "install" / "setup.bash")
+        rclpy.init()
+        node = Node("full_frame_input_observer")
+        shapes = []
+        node.create_subscription(PoseArray, "/needle/state/current_shape", shapes.append, 1)
+        log = tempfile.TemporaryFile(mode="w+")
+        process = subprocess.Popen(
+            ["bash", str(repo_root / "scripts" / "launch_interrogator_to_slicer_stack.sh"),
+             "--install-setup", str(install_setup), "--tcp-host", "127.0.0.1",
+             "--tcp-port", str(source.port), "--bridge-port", str(igtl_port),
+             "--full-frame-input"],
+            cwd=repo_root, stdout=log, stderr=subprocess.STDOUT, start_new_session=True,
+        )
+        try:
+            deadline = time.monotonic() + 20
+            while not shapes and process.poll() is None and time.monotonic() < deadline:
+                rclpy.spin_once(node, timeout_sec=0.1)
+            self.assertIsNone(process.poll(), "Full-frame pipeline exited during launch")
+            self.assertTrue(shapes, "Full-frame pipeline produced no shape")
+            self.assertEqual(len(shapes[-1].poses), 19)
+        finally:
+            if process.poll() is None:
+                os.killpg(process.pid, signal.SIGINT)
+            try:
+                process.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                os.killpg(process.pid, signal.SIGKILL)
+                process.wait()
+            node.destroy_node()
+            rclpy.shutdown()
+            source.close()
+            log.seek(0)
+            if process.returncode not in (0, -signal.SIGINT):
+                print(log.read()[-6000:])
+            log.close()
+
     def test_wire_output_live_switch_and_error_pause(self):
         sources = [Source(), Source(straight=True)]
         with socket.socket() as reservation:
