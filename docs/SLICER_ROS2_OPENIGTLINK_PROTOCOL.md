@@ -145,34 +145,47 @@ Verify Ctrl-C stops the receiver even while the sender is idle.
 
 ## 5. Real input and live switching
 
-Start the Windows interrogator TCP sender. For a direct Ethernet link, assign
-Windows 192.168.50.1/24 and Linux 192.168.50.2/24 without a gateway. Permit inbound
-TCP 50012 in the Windows private-network firewall. Confirm reachability:
+Start the Windows interrogator TCP sender and identify the current IPv4
+address of its Ethernet interface with `ipconfig`. A previously tested direct
+link used Windows `10.100.51.10/24` and Linux `10.100.51.11/24`, with no
+gateway; these are examples, so verify the addresses on the machines before use.
+On Linux, confirm the route and TCP port:
 
 ```bash
-ping -c 4 192.168.50.1
-nc -vz 192.168.50.1 50012
+ip -br -4 addr
+ip route get <INTERROGATOR_IP>
+nc -vz -w 3 <INTERROGATOR_IP> 50012
+```
+
+The final command must succeed before starting/switching to the real source.
+ShapeCore must be listening on TCP 50012. If Windows Firewall blocks the
+connection, use an elevated PowerShell and scope the inbound rule to the Linux
+Ethernet address (replace it if your network differs):
+
+```powershell
+New-NetFirewallRule -DisplayName "FBG TCP from Linux" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 50012 -RemoteAddress 10.100.51.11 -Profile Any
 ```
 
 Both sources can remain running. Switch the active receiver without restarting
 ROS nodes, the bridge, or Slicer:
 
 ```bash
-# Real sensor
-ros2 param set /tcp_receiver_node tcp_host 192.168.50.1
+# Real sensor: replace with its currently reachable IP
+ros2 param set /tcp_receiver_node tcp_host <INTERROGATOR_IP>
 # Simulated sensor
 ros2 param set /tcp_receiver_node tcp_host 127.0.0.1
 ```
 
 Use the same port on both sources for a one-command switch. tcp_port can also
 change at runtime. Switching may produce a short gap and an immediate geometry
-change; there is no interpolation between sources. Verify topic timestamps and
-motion after each switch. No automatic fallback to simulation is performed.
+change; there is no interpolation between sources. Verify frame line numbers,
+topic rates, and motion after each switch. No automatic fallback to simulation
+is performed.
 
-Perform at least five real/simulated/real cycles. Keep the same 20-value sensor
-calibration for both sources. Observe the direction and amplitude of a known
-physical bend and compare the simulator's controlled motion. The connector
-should remain ON and the ROS node processes should remain running.
+The functional smoke test verified switching real-to-simulated and back while
+ROS and Slicer stayed running. For additional repeatability checks, perform
+several more cycles with the same 20-value sensor calibration for both sources.
+The connector should remain ON and the ROS node processes should remain running.
 
 Stop the real sender while selected: verify output pauses, then resumes after
 restarting it. Finally stop the pipeline with Ctrl-C while its selected source
