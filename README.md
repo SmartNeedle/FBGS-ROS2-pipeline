@@ -61,8 +61,8 @@ Tested on Ubuntu 22.04 with ROS 2 Humble. Follow the official [Humble Ubuntu ins
 ## 1. Clone and initialize dependencies
 
 ```bash
-mkdir -p `/Documents
-cd `/Documents
+mkdir -p ~/Documents
+cd ~/Documents
 git clone https://github.com/jfcoeur/FBGS-ROS2-pipeline.git
 cd FBGS-ROS2-pipeline
 bash scripts/init_dependencies.sh
@@ -79,7 +79,7 @@ Do not initialize submodules recursively: the collaborator workspace contains tw
 ## 2. Install dependencies and build
 
 ```bash
-cd `/Documents/FBGS-ROS2-pipeline
+cd ~/Documents/FBGS-ROS2-pipeline
 source /opt/ros/humble/setup.bash
 bash ros2_fbg_shape_pipeline_cpp/scripts/install_linux_dependencies.sh --ros-distro humble
 
@@ -95,7 +95,7 @@ bash scripts/build_cpp_ros2_stack.sh \
 Expect four packages to finish and “Build complete”. For every new terminal that runs the stack, source these paths:
 
 ```bash
-cd `/Documents/FBGS-ROS2-pipeline
+cd ~/Documents/FBGS-ROS2-pipeline
 source /opt/ros/humble/setup.bash
 source "$HOME/.cache/fbg_colcon/$(basename "$PWD")_slicer/install/setup.bash"
 export LD_LIBRARY_PATH="$PWD/OpenIGTLink-build/bin:$PWD/OpenIGTLink-build/lib:${LD_LIBRARY_PATH:-}"
@@ -108,7 +108,7 @@ The library path is needed by the external bridge to load OpenIGTLink.
 Install 3D Slicer. In its Extension Manager install the extension providing OpenIGTLinkIF (SlicerOpenIGTLink) and CurveMaker. Add the following absolute directory under **Edit -> Application Settings -> Modules -> Additional module paths**, then restart Slicer:
 
 ```text
-`/Documents/FBGS-ROS2-pipeline/external dependencies/SmartNeedleIGTL-3DSlicer/SmartNeedle
+~/Documents/FBGS-ROS2-pipeline/external dependencies/SmartNeedleIGTL-3DSlicer/SmartNeedle
 ```
 
 Open SmartNeedle, select/create its connector, then in OpenIGTLinkIF configure a Client to 127.0.0.1 port 18944 (when Slicer and ROS run on the same Linux computer). Connect and start the SmartNeedle display; confirm the connector is ON. WAIT before the bridge starts listening is normal.
@@ -135,7 +135,7 @@ Use three terminals. Keep Slicer open and connected.
 **Terminal A: simulator**
 
 ```bash
-cd `/Documents/FBGS-ROS2-pipeline
+cd ~/Documents/FBGS-ROS2-pipeline
 python3 ros2_fbg_shape_pipeline_cpp/tools/mock_fbg_stream_server.py \
   --host 127.0.0.1 --port 50012 --rate-hz 100
 ```
