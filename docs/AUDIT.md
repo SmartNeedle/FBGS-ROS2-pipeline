@@ -70,9 +70,11 @@ to the calibrated tip. The 19 output points are now segment boundaries, and
 the represented length is 196.391633064447 mm. Regression references and the
 end-to-end straight-needle expectation have been updated for this model.
 
-- Physical interrogator and Slicer GUI tests require the user's Linux/hardware
-  setup. Spectra framing was checked against a private ShapeCore capture;
-  synthetic regression tests cover the corrected convention without distributing it.
+- A functional physical-interrogator and Slicer GUI smoke test was completed
+  on 2026-09-25; see the dated hardware section below. Quantitative known-bend
+  accuracy, repeatability, and drift measurements remain unverified.
+  Spectra framing was checked against a private ShapeCore capture; synthetic
+  regression tests cover the corrected convention without distributing it.
 - 100 Hz is a timer target; distinct input frame rate and Slicer rendering rate
   must be measured independently.
 - The external Slicer module retains the previous geometry during stale input,
@@ -119,10 +121,11 @@ On this Windows audit host, all 4 portable tests passed; 3 ROS-specific tests
 were skipped because ROS 2 is unavailable here. Python syntax and whitespace
 checks passed. The three direct external submodules have no tracked changes.
 
-Retest scope: the required Linux rebuild and synthetic ROS/IGTL/Slicer
-retest were completed on 2026-09-24; see the latest verification below. Physical
-interrogator rate, packet timing, source switching against the real sender, and
-known-bend calibration validation remain pending hardware checks.
+Retest scope: the required Linux rebuild and synthetic ROS/IGTL/Slicer retest
+were completed on 2026-09-24. Functional real-interrogator rate, packet flow,
+Slicer display, and live source switching were then checked on 2026-09-25; see
+the dated hardware section below. Quantitative known-bend calibration validation,
+repeatability, and drift measurements remain open.
 
 
 ## Latest Linux simulation verification (2026-09-24)
@@ -151,9 +154,10 @@ test-only update was pulled without rebuilding.
   cache after module use. That one cache file was restored; its submodule status
   is now clean. No collaborator source files were changed.
 
-The simulated path is verified for integration and nominal 100 Hz operation;
-these results do not establish physical interrogator timing or calibration
-accuracy. Complete the hardware checks above when the sensor is available.
+This section records the 2026-09-24 simulated-path verification only. The
+subsequent hardware smoke test is recorded below; neither simulation results nor
+the functional hardware checks establish quantitative calibration accuracy,
+repeatability, or drift.
 
 ## Linux hardware smoke test (2026-09-25)
 
