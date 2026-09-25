@@ -154,3 +154,34 @@ test-only update was pulled without rebuilding.
 The simulated path is verified for integration and nominal 100 Hz operation;
 these results do not establish physical interrogator timing or calibration
 accuracy. Complete the hardware checks above when the sensor is available.
+
+## Linux hardware smoke test (2026-09-25)
+
+User-run validation on the Linux target with the ShapeCore interrogator and
+Slicer connected:
+
+- Linux reached the Windows ShapeCore endpoint at 10.100.51.10:50012 over the
+direct Ethernet link; the TCP connection succeeded.
+- Raw FBG frames measured approximately 99.8 Hz. Curvature processing measured
+approximately 97-98 Hz, reconstructed PoseArray approximately 97 Hz, and
+OpenIGTLink POINT output approximately 100 Hz.
+- The reconstructed shape contained 19 poses (base plus 18 segment boundaries).
+A reported bent-shape tip was (-0.58, 2.73, 196.36) mm; the calibrated full
+needle length is 196.391633 mm. The z coordinate is not itself the arc length.
+- A zero interrogator error field was observed. The displayed shape appeared
+stationary when held and followed a gentle physical bend.
+- The real-to-simulation and simulation-to-real switches both succeeded while
+ROS nodes and Slicer remained running. During simulation, input, reconstructed
+shape, and OpenIGTLink output each measured approximately 100 Hz, and the
+simulated needle moved in Slicer.
+- During one hardware latency-probe interval, curvature and shape rates were
+about 97.5 Hz; ROS receipt-to-shape-subscriber latency was 2.62 ms median,
+4.06 ms p95, and 18.74 ms maximum. It excludes acquisition, transport before
+ROS receipt, OpenIGTLink delivery, and Slicer rendering.
+
+This was a functional smoke test, not quantitative calibration validation.
+The visual stationary check and single bend do not establish drift, repeatability,
+absolute shape accuracy, or sensor-to-robot registration. The observed sub-100 Hz
+curvature/shape rates also warrant future investigation if a strict 100 Hz
+hardware reconstruction rate is required. No external dependency source was
+modified by this test.
